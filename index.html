@@ -3,76 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acompanhamento Diário de NPS - Regional</title>
-  <!-- Tailwind CSS para estilização rápida e moderna -->
+  <title>Acompanhamento Diário de NPS - Movida Regional</title>
+  <!-- Tailwind CSS para estilização -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- PapaParse para conversão automática de CSV em JSON -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            movida: {
+              DEFAULT: '#FF6600',
+              hover: '#E55C00',
+              dark: '#CC5200',
+              light: '#FFF0E6'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- PapaParse para leitura de CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
 
-  <div class="max-w-5xl mx-auto space-y-6">
+  <style>
+    /* Estilos específicos para Impressão (A4 / PDF sem rolagem) */
+    @media print {
+      body {
+        background-color: white !important;
+        color: black !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-container {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .card-box {
+        border: 1px solid #e2e8f0 !important;
+        background-color: #f8fafc !important;
+        box-shadow: none !important;
+      }
+      table {
+        font-size: 10px !important;
+      }
+      th, td {
+        padding: 3px 6px !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 8mm;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6 font-sans">
+
+  <div class="max-w-5xl mx-auto space-y-4 print-container">
     
-    <!-- Cabeçalho -->
-    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-700 pb-4 gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-white">Relatório de Desempenho NPS</h1>
-        <p class="text-slate-400 text-sm" id="subtitle-info">Carregando dados da regional...</p>
-      </div>
+    <!-- Cabeçalho com Brand Movida -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 gap-3">
       <div class="flex items-center gap-3">
-        <label class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded-lg cursor-pointer transition">
-          Carregar CSV Local
+        <!-- Badge Laranja Movida -->
+        <div class="bg-movida text-white font-black text-xl px-3 py-1 rounded-lg tracking-wider">
+          MOVIDA
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white leading-tight">Painel Regional de NPS</h1>
+          <p class="text-slate-400 text-xs" id="subtitle-info">Carregue o arquivo CSV para atualizar os dados</p>
+        </div>
+      </div>
+
+      <!-- Ações (Ocultas na Impressão) -->
+      <div class="flex items-center gap-2 no-print">
+        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-700 flex items-center gap-1 font-semibold">
+          🖨️ Imprimir / PDF
+        </button>
+        <label class="bg-movida hover:bg-movida-hover text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition font-bold shadow-md shadow-movida/20">
+          📁 Carregar CSV Local
           <input type="file" id="csv-file-input" accept=".csv" class="hidden">
         </label>
       </div>
     </header>
 
-    <!-- Cards de Destaques (Positivo / Negativo) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Cards de Destaques Compactos -->
+    <div class="grid grid-cols-2 gap-3">
       <!-- Destaque Positivo -->
-      <div class="bg-slate-800/80 border border-emerald-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-2 h-full bg-emerald-500"></div>
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">🚀 Maior Evolução (Destaque Positivo)</span>
-        <div class="mt-2 flex justify-between items-baseline">
-          <h2 id="top-store-name" class="text-xl font-bold text-white">--</h2>
-          <span id="top-store-var" class="text-lg font-extrabold text-emerald-400">--</span>
+      <div class="bg-slate-900 border border-emerald-500/40 rounded-xl p-3 shadow-md relative overflow-hidden card-box">
+        <div class="absolute top-0 right-0 w-1.5 h-full bg-emerald-500"></div>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">🚀 Maior Evolução (Destaque Positivo)</span>
+        <div class="mt-1 flex justify-between items-baseline gap-2">
+          <h2 id="top-store-name" class="text-sm md:text-base font-bold text-white truncate">--</h2>
+          <span id="top-store-var" class="text-sm font-extrabold text-emerald-400 whitespace-nowrap">--</span>
         </div>
-        <p id="top-store-detail" class="text-xs text-slate-400 mt-1">--</p>
+        <p id="top-store-detail" class="text-[11px] text-slate-400">--</p>
       </div>
 
       <!-- Destaque Negativo -->
-      <div class="bg-slate-800/80 border border-rose-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-2 h-full bg-rose-500"></div>
-        <span class="text-xs font-bold uppercase tracking-wider text-rose-400">🔻 Maior Queda (Destaque Negativo)</span>
-        <div class="mt-2 flex justify-between items-baseline">
-          <h2 id="low-store-name" class="text-xl font-bold text-white">--</h2>
-          <span id="low-store-var" class="text-lg font-extrabold text-rose-400">--</span>
+      <div class="bg-slate-900 border border-rose-500/40 rounded-xl p-3 shadow-md relative overflow-hidden card-box">
+        <div class="absolute top-0 right-0 w-1.5 h-full bg-rose-500"></div>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 block">🔻 Maior Queda (Destaque Negativo)</span>
+        <div class="mt-1 flex justify-between items-baseline gap-2">
+          <h2 id="low-store-name" class="text-sm md:text-base font-bold text-white truncate">--</h2>
+          <span id="low-store-var" class="text-sm font-extrabold text-rose-400 whitespace-nowrap">--</span>
         </div>
-        <p id="low-store-detail" class="text-xs text-slate-400 mt-1">--</p>
+        <p id="low-store-detail" class="text-[11px] text-slate-400">--</p>
       </div>
     </div>
 
-    <!-- Tabela de Ranking das Lojas -->
-    <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700">
-      <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-        <h3 class="font-semibold text-white">Ranking Regional por NPS Atual</h3>
-        <span id="total-regional" class="text-sm font-bold px-3 py-1 bg-slate-700 rounded-full text-blue-300">Total: --</span>
+    <!-- Tabela de Ranking Ultra Compacta -->
+    <div class="bg-slate-900 rounded-xl shadow-xl overflow-hidden border border-slate-800 card-box">
+      <div class="px-4 py-2 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-movida">Ranking de Lojas</h3>
+        <span id="total-regional" class="text-xs font-bold px-2.5 py-0.5 bg-movida/20 border border-movida/30 rounded-full text-movida">
+          Média Regional: --
+        </span>
       </div>
       
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-900/50 text-slate-400 text-xs uppercase border-b border-slate-700">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-950 text-slate-400 text-[10px] uppercase border-b border-slate-800">
             <tr>
-              <th class="py-3 px-4 text-center">#</th>
-              <th class="py-3 px-4">Loja / Cidade</th>
-              <th class="py-3 px-4 text-right" id="th-prev">NPS Anterior</th>
-              <th class="py-3 px-4 text-right" id="th-curr">NPS Atual</th>
-              <th class="py-3 px-4 text-center">Variação</th>
+              <th class="py-2 px-3 text-center w-8">#</th>
+              <th class="py-2 px-3">Loja / Cidade</th>
+              <th class="py-2 px-3 text-right" id="th-prev">Anterior</th>
+              <th class="py-2 px-3 text-right" id="th-curr">Atual</th>
+              <th class="py-2 px-3 text-center w-24">Variação</th>
             </tr>
           </thead>
-          <tbody id="table-body" class="divide-y divide-slate-700/50">
+          <tbody id="table-body" class="divide-y divide-slate-800/60">
             <tr>
-              <td colspan="5" class="py-8 text-center text-slate-500">Aguardando dados...</td>
+              <td colspan="5" class="py-6 text-center text-slate-500 text-xs">Aguardando envio do arquivo CSV...</td>
             </tr>
           </tbody>
         </table>
@@ -82,9 +145,6 @@
   </div>
 
   <script>
-    // Substitua esta URL pelo link CSV publicado do seu Google Sheets (se desejar automatizar 100%)
-    const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1-7qBlZOy2dme5sAtRNV8bDjsxV6z_5Rre_XR7A7jwsg/export?format=csv';
-
     document.getElementById('csv-file-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
@@ -96,16 +156,6 @@
       }
     });
 
-    // Se houver URL do Google Sheets configurada, carrega na inicialização
-    if (GOOGLE_SHEETS_CSV_URL) {
-      Papa.parse(GOOGLE_SHEETS_CSV_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => processData(results.data)
-      });
-    }
-
     function parseNPS(value) {
       if (!value) return 0;
       let clean = value.toString().replace('%', '').replace(',', '.').trim();
@@ -116,11 +166,11 @@
       if (!data || data.length === 0) return;
 
       const keys = Object.keys(data[0]);
-      const storeKey = keys[0]; // Primeira coluna: 'Loja' ou 'Cidade'
-      const prevKey = keys[keys.length - 2]; // Penúltima coluna (Anterior)
-      const currKey = keys[keys.length - 1]; // Última coluna (Atual)
+      const storeKey = keys[0]; // Primeira coluna (Loja/Cidade)
+      const prevKey = keys[keys.length - 2]; // Penúltima coluna
+      const currKey = keys[keys.length - 1]; // Última coluna
 
-      document.getElementById('subtitle-info').textContent = `Comparativo entre ${prevKey} e ${currKey}`;
+      document.getElementById('subtitle-info').textContent = `Comparativo: ${prevKey} vs ${currKey}`;
       document.getElementById('th-prev').textContent = prevKey;
       document.getElementById('th-curr').textContent = currKey;
 
@@ -144,51 +194,51 @@
         }
       });
 
-      // Ordena da loja de maior NPS atual para a de menor
+      // Ordena da melhor loja para a pior loja por NPS Atual
       items.sort((a, b) => b.curr - a.curr);
 
-      // Atualiza Total Regional no topo da tabela
+      // Atualiza Total Regional
       if (totalRow) {
         document.getElementById('total-regional').textContent = `Média Regional: ${totalRow.curr.toFixed(2)}%`;
       }
 
-      // Identifica Destaques Positivos e Negativos (baseado na variação de NPS)
+      // Identifica Destaques por Variação
       const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
       const topStore = sortedByDiff[0];
       const lowStore = sortedByDiff[sortedByDiff.length - 1];
 
-      // Atualiza Destaque Positivo
+      // Atualiza Card Positivo
       if (topStore) {
         document.getElementById('top-store-name').textContent = topStore.name;
         document.getElementById('top-store-var').textContent = `+${topStore.diff.toFixed(2)}%`;
-        document.getElementById('top-store-detail').textContent = `De ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
+        document.getElementById('top-store-detail').textContent = `Subiu de ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
       }
 
-      // Atualiza Destaque Negativo
+      // Atualiza Card Negativo
       if (lowStore) {
         document.getElementById('low-store-name').textContent = lowStore.name;
         document.getElementById('low-store-var').textContent = `${lowStore.diff.toFixed(2)}%`;
-        document.getElementById('low-store-detail').textContent = `De ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
+        document.getElementById('low-store-detail').textContent = `Caiu de ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
       }
 
-      // Renderiza Tabela
+      // Preenche a Tabela com Linhas Enxutas
       const tbody = document.getElementById('table-body');
       tbody.innerHTML = '';
 
       items.forEach((item, index) => {
         const isPositive = item.diff >= 0;
         const diffBadge = isPositive 
-          ? `<span class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 font-bold">+${item.diff.toFixed(2)}%</span>`
-          : `<span class="px-2 py-0.5 rounded text-xs bg-rose-500/10 text-rose-400 font-bold">${item.diff.toFixed(2)}%</span>`;
+          ? `<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-400 font-bold inline-block w-16 text-center">+${item.diff.toFixed(2)}%</span>`
+          : `<span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-500/15 text-rose-400 font-bold inline-block w-16 text-center">${item.diff.toFixed(2)}%</span>`;
 
         const row = document.createElement('tr');
-        row.className = "hover:bg-slate-700/30 transition";
+        row.className = "hover:bg-slate-800/40 transition";
         row.innerHTML = `
-          <td class="py-3 px-4 text-center font-bold text-slate-400">${index + 1}</td>
-          <td class="py-3 px-4 font-medium text-white">${item.name}</td>
-          <td class="py-3 px-4 text-right text-slate-400">${item.prev.toFixed(2)}%</td>
-          <td class="py-3 px-4 text-right font-bold text-blue-300">${item.curr.toFixed(2)}%</td>
-          <td class="py-3 px-4 text-center">${diffBadge}</td>
+          <td class="py-1.5 px-3 text-center font-bold text-slate-500">${index + 1}</td>
+          <td class="py-1.5 px-3 font-medium text-slate-100 truncate max-w-[220px]">${item.name}</td>
+          <td class="py-1.5 px-3 text-right text-slate-400">${item.prev.toFixed(2)}%</td>
+          <td class="py-1.5 px-3 text-right font-bold text-movida">${item.curr.toFixed(2)}%</td>
+          <td class="py-1.5 px-3 text-center">${diffBadge}</td>
         `;
         tbody.appendChild(row);
       });
