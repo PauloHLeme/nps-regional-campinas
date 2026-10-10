@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acompanhamento Diário de NPS - Regional</title>
+  <!-- Tailwind CSS para estilização rápida e moderna -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PapaParse para conversão automática de CSV em JSON -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
+
+  <div class="max-w-5xl mx-auto space-y-6">
+    
+    <!-- Cabeçalho -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-700 pb-4 gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-white">Relatório de Desempenho NPS</h1>
+        <p class="text-slate-400 text-sm" id="subtitle-info">Carregando dados da regional...</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <label class="bg-blue-600 hover:bg-blue-500 text-white text-sm px-4 py-2 rounded-lg cursor-pointer transition">
+          Carregar CSV Local
+          <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+        </label>
+      </div>
+    </header>
+
+    <!-- Cards de Destaques (Positivo / Negativo) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Destaque Positivo -->
+      <div class="bg-slate-800/80 border border-emerald-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-2 h-full bg-emerald-500"></div>
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">🚀 Maior Evolução (Destaque Positivo)</span>
+        <div class="mt-2 flex justify-between items-baseline">
+          <h2 id="top-store-name" class="text-xl font-bold text-white">--</h2>
+          <span id="top-store-var" class="text-lg font-extrabold text-emerald-400">--</span>
+        </div>
+        <p id="top-store-detail" class="text-xs text-slate-400 mt-1">--</p>
+      </div>
+
+      <!-- Destaque Negativo -->
+      <div class="bg-slate-800/80 border border-rose-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-2 h-full bg-rose-500"></div>
+        <span class="text-xs font-bold uppercase tracking-wider text-rose-400">🔻 Maior Queda (Destaque Negativo)</span>
+        <div class="mt-2 flex justify-between items-baseline">
+          <h2 id="low-store-name" class="text-xl font-bold text-white">--</h2>
+          <span id="low-store-var" class="text-lg font-extrabold text-rose-400">--</span>
+        </div>
+        <p id="low-store-detail" class="text-xs text-slate-400 mt-1">--</p>
+      </div>
+    </div>
+
+    <!-- Tabela de Ranking das Lojas -->
+    <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700">
+      <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+        <h3 class="font-semibold text-white">Ranking Regional por NPS Atual</h3>
+        <span id="total-regional" class="text-sm font-bold px-3 py-1 bg-slate-700 rounded-full text-blue-300">Total: --</span>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-900/50 text-slate-400 text-xs uppercase border-b border-slate-700">
+            <tr>
+              <th class="py-3 px-4 text-center">#</th>
+              <th class="py-3 px-4">Loja / Cidade</th>
+              <th class="py-3 px-4 text-right" id="th-prev">NPS Anterior</th>
+              <th class="py-3 px-4 text-right" id="th-curr">NPS Atual</th>
+              <th class="py-3 px-4 text-center">Variação</th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="divide-y divide-slate-700/50">
+            <tr>
+              <td colspan="5" class="py-8 text-center text-slate-500">Aguardando dados...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Substitua esta URL pelo link CSV publicado do seu Google Sheets (se desejar automatizar 100%)
+    const GOOGLE_SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1-7qBlZOy2dme5sAtRNV8bDjsxV6z_5Rre_XR7A7jwsg/export?format=csv';
+
+    document.getElementById('csv-file-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => processData(results.data)
+        });
+      }
+    });
+
+    // Se houver URL do Google Sheets configurada, carrega na inicialização
+    if (GOOGLE_SHEETS_CSV_URL) {
+      Papa.parse(GOOGLE_SHEETS_CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => processData(results.data)
+      });
+    }
+
+    function parseNPS(value) {
+      if (!value) return 0;
+      let clean = value.toString().replace('%', '').replace(',', '.').trim();
+      return parseFloat(clean) || 0;
+    }
+
+    function processData(data) {
+      if (!data || data.length === 0) return;
+
+      const keys = Object.keys(data[0]);
+      const storeKey = keys[0]; // Primeira coluna: 'Loja' ou 'Cidade'
+      const prevKey = keys[keys.length - 2]; // Penúltima coluna (Anterior)
+      const currKey = keys[keys.length - 1]; // Última coluna (Atual)
+
+      document.getElementById('subtitle-info').textContent = `Comparativo entre ${prevKey} e ${currKey}`;
+      document.getElementById('th-prev').textContent = prevKey;
+      document.getElementById('th-curr').textContent = currKey;
+
+      let items = [];
+      let totalRow = null;
+
+      data.forEach(row => {
+        const storeName = row[storeKey];
+        if (!storeName) return;
+
+        const prev = parseNPS(row[prevKey]);
+        const curr = parseNPS(row[currKey]);
+        const diff = curr - prev;
+
+        const obj = { name: storeName, prev, curr, diff };
+
+        if (storeName.toLowerCase().includes('total') || storeName.toLowerCase().includes('rac sp')) {
+          totalRow = obj;
+        } else {
+          items.push(obj);
+        }
+      });
+
+      // Ordena da loja de maior NPS atual para a de menor
+      items.sort((a, b) => b.curr - a.curr);
+
+      // Atualiza Total Regional no topo da tabela
+      if (totalRow) {
+        document.getElementById('total-regional').textContent = `Média Regional: ${totalRow.curr.toFixed(2)}%`;
+      }
+
+      // Identifica Destaques Positivos e Negativos (baseado na variação de NPS)
+      const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
+      const topStore = sortedByDiff[0];
+      const lowStore = sortedByDiff[sortedByDiff.length - 1];
+
+      // Atualiza Destaque Positivo
+      if (topStore) {
+        document.getElementById('top-store-name').textContent = topStore.name;
+        document.getElementById('top-store-var').textContent = `+${topStore.diff.toFixed(2)}%`;
+        document.getElementById('top-store-detail').textContent = `De ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
+      }
+
+      // Atualiza Destaque Negativo
+      if (lowStore) {
+        document.getElementById('low-store-name').textContent = lowStore.name;
+        document.getElementById('low-store-var').textContent = `${lowStore.diff.toFixed(2)}%`;
+        document.getElementById('low-store-detail').textContent = `De ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
+      }
+
+      // Renderiza Tabela
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+
+      items.forEach((item, index) => {
+        const isPositive = item.diff >= 0;
+        const diffBadge = isPositive 
+          ? `<span class="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-400 font-bold">+${item.diff.toFixed(2)}%</span>`
+          : `<span class="px-2 py-0.5 rounded text-xs bg-rose-500/10 text-rose-400 font-bold">${item.diff.toFixed(2)}%</span>`;
+
+        const row = document.createElement('tr');
+        row.className = "hover:bg-slate-700/30 transition";
+        row.innerHTML = `
+          <td class="py-3 px-4 text-center font-bold text-slate-400">${index + 1}</td>
+          <td class="py-3 px-4 font-medium text-white">${item.name}</td>
+          <td class="py-3 px-4 text-right text-slate-400">${item.prev.toFixed(2)}%</td>
+          <td class="py-3 px-4 text-right font-bold text-blue-300">${item.curr.toFixed(2)}%</td>
+          <td class="py-3 px-4 text-center">${diffBadge}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
