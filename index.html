@@ -279,7 +279,7 @@
       document.getElementById('th-curr').textContent = currKey;
 
       let items = [];
-      let totalRow = null;
+      let totalRowNps = null;
 
       let upCount = 0;
       let downCount = 0;
@@ -295,8 +295,9 @@
 
         const obj = { name: storeName.trim(), prev, curr, diff };
 
-        if (storeName.toLowerCase().includes('total') || storeName.toLowerCase().includes('rac sp')) {
-          totalRow = obj;
+        const lowerName = storeName.toLowerCase();
+        if (lowerName.includes('total') || lowerName.includes('rac sp') || lowerName.includes('regional')) {
+          totalRowNps = curr;
         } else {
           items.push(obj);
 
@@ -315,70 +316,3 @@
       document.getElementById('count-down').textContent = downCount;
 
       items.sort((a, b) => b.curr - a.curr);
-
-      if (totalRow) {
-        document.getElementById('total-regional').textContent = `Média Regional: ${totalRow.curr.toFixed(2)}%`;
-      }
-
-      const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
-      const topStore = sortedByDiff[0];
-      const lowStore = sortedByDiff[sortedByDiff.length - 1];
-
-      if (topStore) {
-        document.getElementById('top-store-name').textContent = topStore.name;
-        document.getElementById('top-store-var').textContent = `+${topStore.diff.toFixed(2)}%`;
-        document.getElementById('top-store-detail').textContent = `De ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
-      }
-
-      if (lowStore) {
-        document.getElementById('low-store-name').textContent = lowStore.name;
-        document.getElementById('low-store-var').textContent = `${lowStore.diff.toFixed(2)}%`;
-        document.getElementById('low-store-detail').textContent = `De ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
-      }
-
-      const maxAbsDiff = Math.max(...items.map(i => Math.abs(i.diff)), 1);
-
-      const tbody = document.getElementById('table-body');
-      tbody.innerHTML = '';
-
-      items.forEach((item, index) => {
-        const isPositive = item.diff > 0;
-        const isNeutral = Math.abs(item.diff) < 0.001;
-        
-        let diffColorClass = 'text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800';
-        let barBgClass = 'bg-slate-400 dark:bg-slate-500';
-
-        if (isPositive) {
-          diffColorClass = 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15';
-          barBgClass = 'bg-emerald-500';
-        } else if (!isNeutral) {
-          diffColorClass = 'text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15';
-          barBgClass = 'bg-rose-500';
-        }
-
-        const barWidthPercent = Math.min(Math.round((Math.abs(item.diff) / maxAbsDiff) * 100), 100);
-
-        const diffBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] ${diffColorClass} font-bold inline-block w-14 text-center">${isPositive ? '+' : ''}${item.diff.toFixed(2)}%</span>`;
-
-        const progressBarHtml = `
-          <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden flex items-center">
-            <div class="${barBgClass} h-full transition-all duration-300" style="width: ${barWidthPercent}%;"></div>
-          </div>
-        `;
-
-        const row = document.createElement('tr');
-        row.className = "hover:bg-slate-100 dark:hover:bg-slate-800/40 transition";
-        row.innerHTML = `
-          <td class="py-1.5 px-2 text-center font-bold text-slate-400 dark:text-slate-500">${index + 1}</td>
-          <td class="py-1.5 px-3 font-medium text-slate-800 dark:text-slate-100 truncate max-w-[200px]">${item.name}</td>
-          <td class="py-1.5 px-3 text-right text-slate-500 dark:text-slate-400">${item.prev.toFixed(2)}%</td>
-          <td class="py-1.5 px-3 text-right font-bold text-movida">${item.curr.toFixed(2)}%</td>
-          <td class="py-1.5 px-3 text-center">${progressBarHtml}</td>
-          <td class="py-1.5 px-2 text-center">${diffBadge}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-  </script>
-</body>
-</html>
