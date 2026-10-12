@@ -6,7 +6,6 @@
   <title>Painel Regional de NPS - Movida</title>
   
   <style>
-    /*deploy 11*/
     /* ==========================================================================
        1. VARIÁVEIS DE DESIGN SYSTEM & TEMAS (LIGHT / DARK)
        ========================================================================== */
@@ -802,6 +801,30 @@
       return isNaN(num) ? 0 : num;
     }
 
+    function parseCSVLine(line, delimiter) {
+      const result = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === delimiter && !inQuotes) {
+          result.push(cur.trim());
+          cur = '';
+        } else {
+          cur += char;
+        }
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
     function processCSVContent(text) {
       if (!text || !text.trim()) {
         alert('O arquivo selecionado está vazio.');
@@ -835,33 +858,54 @@
         delimiter = '\t';
       }
 
-      // Separa campos mantendo aspas duplas caso existam
-      function parseCSVLine(line) {
-        const pattern = new RegExp(
-          '(\\' + delimiter + '|^)(?:"([^"]*)"|([^"\\' + delimiter + ']*))',
-          'gi'
-        );
-        const result = [];
-        let matches = null;
-        while ((matches = pattern.exec(line))) {
-          let matchedValue = matches[2] !== undefined ? matches[2] : matches[3];
-          result.push(matchedValue ? matchedValue.trim() : '');
+      // Converte todas as linhas em arrays de campos
+      let allRows = lines.map(line => parseCSVLine(line, delimiter));
+
+      // Remove colunas vazias no final da tabela (causadas por ';' no final de cada linha)
+      while (allRows.length > 0 && allRows[0].length > 1) {
+        const lastIdx = allRows[0].length - 1;
+        const isLastColEmptyAll = allRows.every(r => r.length <= lastIdx || !r[lastIdx] || r[lastIdx].trim() === '');
+        if (isLastColEmptyAll) {
+          allRows.forEach(r => r.splice(lastIdx, 1));
+        } else {
+          break;
         }
-        return result;
       }
 
-      const headers = parseCSVLine(lines[0]);
-      if (headers.length < 3) {
-        alert('O arquivo deve possuir ao menos 3 colunas (ex: Loja, NPS Anterior, NPS Atual).');
+      const headers = allRows[0];
+      if (headers.length < 2) {
+        alert('O arquivo deve possuir ao menos 2 colunas válidas (ex: Loja, NPS).');
         return;
       }
 
-      const prevHeaderName = headers[headers.length - 2];
-      const currHeaderName = headers[headers.length - 1];
+      // Mapeia os índices das colunas de dados
+      let prevColIdx = 1;
+      let currColIdx = headers.length - 1;
 
-      // Atualiza textos do cabeçalho
-      document.getElementById('subtitle-info').textContent = `Comparativo: ${prevHeaderName} vs ${currHeaderName}`;
-      document.getElementById('hero-subtitle').textContent = `Comparações baseadas em: ${prevHeaderName} vs ${currHeaderName}`;
+      if (headers.length >= 3) {
+        prevColIdx = headers.length - 2;
+        currColIdx = headers.length - 1;
+      } else {
+        prevColIdx = 1;
+        currColIdx = 1;
+      }
+
+      let prevHeaderName = headers[prevColIdx] || 'Anterior';
+      let currHeaderName = headers[currColIdx] || 'Atual';
+
+      // Se os nomes das colunas forem idênticos no CSV, ajusta a rotulagem para clareza
+      if (prevColIdx !== currColIdx && prevHeaderName === currHeaderName) {
+        prevHeaderName = `${headers[prevColIdx]} (1)`;
+        currHeaderName = `${headers[currColIdx]} (2)`;
+      }
+
+      // Atualiza os títulos no painel
+      const subtitleText = (prevColIdx === currColIdx) 
+        ? `Base de NPS: ${currHeaderName}`
+        : `Comparativo: ${prevHeaderName} vs ${currHeaderName}`;
+
+      document.getElementById('subtitle-info').textContent = subtitleText;
+      document.getElementById('hero-subtitle').textContent = subtitleText;
       document.getElementById('th-prev').textContent = prevHeaderName;
       document.getElementById('th-curr').textContent = currHeaderName;
 
@@ -873,15 +917,15 @@
       let equalCount = 0;
 
       // Processa cada linha de dados
-      for (let i = 1; i < lines.length; i++) {
-        const cols = parseCSVLine(lines[i]);
-        if (cols.length < 2) continue;
+      for (let i = 1; i < allRows.length; i++) {
+        const cols = allRows[i];
+        if (cols.length < 1) continue;
 
         const storeName = cols[0];
         if (!storeName) continue;
 
-        const prevVal = parseNPSValue(cols[cols.length - 2]);
-        const currVal = parseNPSValue(cols[cols.length - 1]);
+        const prevVal = parseNPSValue(cols[prevColIdx]);
+        const currVal = parseNPSValue(cols[currColIdx]);
         const diffVal = currVal - prevVal;
 
         const storeObj = { name: storeName, prev: prevVal, curr: currVal, diff: diffVal };
@@ -903,7 +947,7 @@
         }
       }
 
-      // Atualiza contadores (corrigida a referência da variável downCount)
+      // Atualiza contadores
       document.getElementById('count-up').textContent = upCount;
       document.getElementById('count-equal').textContent = equalCount;
       document.getElementById('count-down').textContent = downCount;
