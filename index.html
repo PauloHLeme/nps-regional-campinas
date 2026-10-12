@@ -23,8 +23,6 @@
       }
     }
   </script>
-  <!-- PapaParse para leitura de CSV -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
     /* Estilos específicos para Impressão e PDF */
@@ -103,11 +101,11 @@
         </div>
       </div>
 
-      <!-- Botoes de Ação (Ocultos no Print) -->
+      <!-- Botões de Ação -->
       <div class="flex items-center gap-2 no-print">
-        <button id="theme-toggle" type="button" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer">
-          <span id="theme-toggle-icon">☀️</span>
-          <span id="theme-toggle-text">Modo Claro</span>
+        <button id="btn-toggle-theme" type="button" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer">
+          <span id="theme-icon">☀️</span>
+          <span id="theme-text">Modo Claro</span>
         </button>
 
         <button onclick="window.print()" type="button" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 flex items-center gap-1 font-semibold cursor-pointer">
@@ -116,14 +114,14 @@
         
         <label class="bg-movida hover:bg-movida-hover text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition font-bold shadow-md shadow-movida/20 flex items-center gap-1">
           📁 Carregar CSV Local
-          <input type="file" id="csv-file-input" accept=".csv, .txt" class="hidden">
+          <input type="file" id="csv-file-input" accept=".csv, .txt, .tsv" class="hidden">
         </label>
       </div>
     </header>
 
     <!-- CARD DESTAQUE CRÍTICO: MÉDIA REGIONAL -->
     <div class="bg-gradient-to-r from-movida-dark via-movida to-orange-500 rounded-xl p-4 text-white shadow-xl relative overflow-hidden card-box">
-      <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl font-black select-none">
+      <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl font-black select-none pointer-events-none">
         NPS
       </div>
       <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -230,164 +228,23 @@
   </div>
 
   <script>
-    // Gerenciador de Tema
-    const htmlEl = document.documentElement;
-    const themeBtn = document.getElementById('theme-toggle');
-    const themeIcon = document.getElementById('theme-toggle-icon');
-    const themeText = document.getElementById('theme-toggle-text');
+    // ----------------------------------------------------
+    // 1. GERENCIADOR DE TEMA (DARK / LIGHT) - 100% GARANTIDO
+    // ----------------------------------------------------
+    const btnToggleTheme = document.getElementById('btn-toggle-theme');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
 
-    function setTheme(isDark) {
+    function updateThemeUI(isDark) {
       if (isDark) {
-        htmlEl.classList.add('dark');
+        document.documentElement.classList.add('dark');
         themeIcon.textContent = '☀️';
         themeText.textContent = 'Modo Claro';
-        localStorage.setItem('theme', 'dark');
       } else {
-        htmlEl.classList.remove('dark');
+        document.documentElement.classList.remove('dark');
         themeIcon.textContent = '🌙';
         themeText.textContent = 'Modo Escuro';
-        localStorage.setItem('theme', 'light');
       }
     }
 
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      setTheme(false);
-    } else {
-      setTheme(true);
-    }
-
-    themeBtn.addEventListener('click', () => {
-      setTheme(!htmlEl.classList.contains('dark'));
-    });
-
-    // Leitura do Arquivo CSV
-    document.getElementById('csv-file-input').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-
-      reader.onload = function(event) {
-        let content = event.target.result;
-
-        Papa.parse(content, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            if (results.data && results.data.length > 0) {
-              processData(results.data);
-            } else {
-              alert("Não foi possível extrair linhas do arquivo CSV.");
-            }
-          },
-          error: (err) => {
-            alert("Erro ao processar CSV: " + err.message);
-          }
-        });
-      };
-
-      reader.readAsText(file, 'ISO-8859-1');
-    });
-
-    function parseNPS(value) {
-      if (value === undefined || value === null) return 0;
-      let clean = value.toString().replace('%', '').replace(',', '.').trim();
-      return parseFloat(clean) || 0;
-    }
-
-    function processData(data) {
-      if (!data || data.length === 0) return;
-
-      const keys = Object.keys(data[0]);
-      if (keys.length < 3) {
-        alert("O arquivo CSV precisa ter no mínimo 3 colunas (Loja, NPS Anterior, NPS Atual).");
-        return;
-      }
-
-      const storeKey = keys[0];
-      const prevKey = keys[keys.length - 2];
-      const currKey = keys[keys.length - 1];
-
-      document.getElementById('subtitle-info').textContent = `Comparativo: ${prevKey} vs ${currKey}`;
-      document.getElementById('th-prev').textContent = prevKey;
-      document.getElementById('th-curr').textContent = currKey;
-
-      let items = [];
-      let totalRow = null;
-
-      let upCount = 0;
-      let downCount = 0;
-      let equalCount = 0;
-
-      data.forEach(row => {
-        const storeName = row[storeKey];
-        if (!storeName || storeName.trim() === '') return;
-
-        const prev = parseNPS(row[prevKey]);
-        const curr = parseNPS(row[currKey]);
-        const diff = curr - prev;
-
-        const obj = { name: storeName.trim(), prev, curr, diff };
-
-        const lowerName = storeName.toLowerCase();
-        if (lowerName.includes('total') || lowerName.includes('rac sp') || lowerName.includes('regional')) {
-          totalRow = obj;
-        } else {
-          items.push(obj);
-
-          if (Math.abs(diff) < 0.001) {
-            equalCount++;
-          } else if (diff > 0) {
-            upCount++;
-          } else {
-            downCount++;
-          }
-        }
-      });
-
-      // Atualização dos Contadores
-      document.getElementById('count-up').textContent = upCount;
-      document.getElementById('count-equal').textContent = equalCount;
-      document.getElementById('count-down').textContent = downCount;
-      document.getElementById('total-regional-tag').textContent = `Total de Lojas: ${items.length}`;
-
-      // CÁLCULO DA MÉDIA REGIONAL
-      let regPrev = 0;
-      let regCurr = 0;
-
-      if (totalRow) {
-        regPrev = totalRow.prev;
-        regCurr = totalRow.curr;
-      } else if (items.length > 0) {
-        const sumPrev = items.reduce((acc, item) => acc + item.prev, 0);
-        const sumCurr = items.reduce((acc, item) => acc + item.curr, 0);
-        regPrev = sumPrev / items.length;
-        regCurr = sumCurr / items.length;
-      }
-
-      const regDiff = regCurr - regPrev;
-      const isRegPos = regDiff >= 0;
-
-      document.getElementById('reg-prev').textContent = `${regPrev.toFixed(2)}%`;
-      document.getElementById('reg-curr').textContent = `${regCurr.toFixed(2)}%`;
-      document.getElementById('reg-diff').textContent = `${isRegPos ? '+' : ''}${regDiff.toFixed(2)}%`;
-      document.getElementById('regional-card-subtitle').textContent = `Média ponderada entre ${prevKey} e ${currKey}`;
-
-      // Ordena Lojas do Maior NPS Atual para o Menor
-      items.sort((a, b) => b.curr - a.curr);
-
-      // Destaques de Maior Evolução e Maior Queda
-      const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
-      const topStore = sortedByDiff[0];
-      const lowStore = sortedByDiff[sortedByDiff.length - 1];
-
-      if (topStore) {
-        document.getElementById('top-store-name').textContent = topStore.name;
-        document.getElementById('top-store-var').textContent = `+${topStore.diff.toFixed(2)}%`;
-        document.getElementById('top-store-detail').textContent = `De ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
-      }
-
-      if (lowStore) {
-        document.getElementById('low-store-name').textContent = lowStore.name;
-        document.getElementById('low-store-var').textContent
+    // Car
