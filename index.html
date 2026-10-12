@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Regional de NPS - Movida</title>
-  
+  <title>Acompanhamento Diário de NPS - Movida Regional</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -24,32 +23,16 @@
       }
     }
   </script>
-  
-  <!-- PapaParse CDN com suporte nativo de fallback no JS -->
+  <!-- PapaParse para leitura de CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
-    /* Estilos para tela */
-    body {
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    /* Animações suaves de interação */
-    .card-transition {
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .card-transition:hover {
-      transform: translateY(-2px);
-    }
-
-    /* Estilos Estritos de Impressão A4 */
+    /* Estilos específicos para Impressão e PDF */
     @media print {
-      html, body {
+      body {
         background-color: #ffffff !important;
         color: #0f172a !important;
-        font-size: 11px !important;
         padding: 0 !important;
-        margin: 0 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
@@ -58,7 +41,6 @@
       }
       .print-container {
         max-width: 100% !important;
-        width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
       }
@@ -66,8 +48,8 @@
         background-color: #FF6600 !important;
         color: #ffffff !important;
         padding: 10px 14px !important;
-        border-radius: 6px !important;
-        margin-bottom: 10px !important;
+        border-radius: 8px !important;
+        margin-bottom: 8px !important;
       }
       .print-header h1, .print-header p {
         color: #ffffff !important;
@@ -76,16 +58,14 @@
         border: 1px solid #fed7aa !important;
         background-color: #fff7ed !important;
         box-shadow: none !important;
-        padding: 8px !important;
       }
-      .card-box-neutral {
+      .card-box-dark {
         border: 1px solid #e2e8f0 !important;
         background-color: #f8fafc !important;
         box-shadow: none !important;
-        padding: 8px !important;
       }
       table {
-        font-size: 9px !important;
+        font-size: 8.5px !important;
         width: 100% !important;
         border-collapse: collapse !important;
       }
@@ -93,112 +73,136 @@
         background-color: #fff7ed !important;
         color: #c2410c !important;
         border-bottom: 2px solid #ff6600 !important;
-        padding: 3px 6px !important;
+        padding: 3px 5px !important;
       }
       td {
-        padding: 2.5px 6px !important;
+        padding: 2.5px 5px !important;
         border-bottom: 1px solid #e2e8f0 !important;
         color: #1e293b !important;
       }
-      .progress-bar-bg {
-        background-color: #e2e8f0 !important;
-      }
       @page {
         size: A4 portrait;
-        margin: 6mm 8mm;
+        margin: 6mm;
       }
     }
   </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen p-3 md:p-6 font-sans">
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen p-3 md:p-6 font-sans transition-colors duration-200">
 
-  <div class="max-w-5xl mx-auto space-y-4 print-container">
+  <div class="max-w-5xl mx-auto space-y-3 print-container">
     
     <!-- Cabeçalho Principal -->
     <header class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300 dark:border-slate-800 pb-3 gap-3 print-header">
       <div class="flex items-center gap-3">
-        <div class="bg-movida text-white font-black text-2xl px-3.5 py-1 rounded-xl tracking-wider shadow-sm flex items-center justify-center">
+        <div class="bg-movida text-white font-black text-xl px-3 py-1 rounded-lg tracking-wider shadow-md">
           MOVIDA
         </div>
         <div>
           <h1 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">Painel Regional de NPS</h1>
-          <p class="text-slate-500 dark:text-slate-400 text-xs" id="subtitle-info">Selecione o arquivo CSV local para atualizar o relatório</p>
+          <p class="text-slate-500 dark:text-slate-400 text-xs" id="subtitle-info">Aguardando envio do relatório CSV...</p>
         </div>
       </div>
 
-      <!-- Barra de Ferramentas / Ações (Ocultas na Impressão) -->
-      <div class="flex items-center gap-2 no-print flex-wrap">
-        <!-- Alternador Dark / Light -->
-        <button id="theme-toggle" type="button" class="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1.5 shadow-sm">
+      <!-- Botoes de Ação (Ocultos no Print) -->
+      <div class="flex items-center gap-2 no-print">
+        <button id="theme-toggle" type="button" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer">
           <span id="theme-toggle-icon">☀️</span>
           <span id="theme-toggle-text">Modo Claro</span>
         </button>
 
-        <!-- Botão de Impressão -->
-        <button onclick="window.print()" type="button" class="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 font-semibold shadow-sm">
-          <span>🖨️</span>
-          <span>Imprimir / PDF</span>
+        <button onclick="window.print()" type="button" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 flex items-center gap-1 font-semibold cursor-pointer">
+          🖨️ Imprimir / PDF
         </button>
         
-        <!-- Upload de CSV -->
-        <label class="bg-movida hover:bg-movida-hover text-white text-xs px-3.5 py-2 rounded-lg cursor-pointer transition font-bold shadow-md shadow-movida/20 flex items-center gap-1.5">
-          <span>📁</span>
-          <span>Carregar CSV Local</span>
-          <input type="file" id="csv-file-input" accept=".csv, text/csv, application/vnd.ms-excel" class="hidden">
+        <label class="bg-movida hover:bg-movida-hover text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition font-bold shadow-md shadow-movida/20 flex items-center gap-1">
+          📁 Carregar CSV Local
+          <input type="file" id="csv-file-input" accept=".csv, .txt" class="hidden">
         </label>
       </div>
     </header>
 
+    <!-- CARD DESTAQUE CRÍTICO: MÉDIA REGIONAL -->
+    <div class="bg-gradient-to-r from-movida-dark via-movida to-orange-500 rounded-xl p-4 text-white shadow-xl relative overflow-hidden card-box">
+      <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl font-black select-none">
+        NPS
+      </div>
+      <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-orange-200 block">🎯 Indicador Crítico Chave</span>
+          <h2 class="text-lg font-bold text-white">Média Geral da Regional</h2>
+          <p class="text-xs text-orange-100" id="regional-card-subtitle">Aguardando dados da planilha</p>
+        </div>
+
+        <div class="flex items-center gap-4 bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
+          <div class="text-right">
+            <span class="text-[10px] uppercase font-semibold text-orange-200 block">NPS Anterior</span>
+            <span class="text-base font-bold text-orange-100" id="reg-prev">--</span>
+          </div>
+          <div class="text-xl text-orange-300 font-light">➔</div>
+          <div>
+            <span class="text-[10px] uppercase font-semibold text-orange-200 block">NPS Atual</span>
+            <span class="text-2xl font-black text-white" id="reg-curr">--</span>
+          </div>
+          <div class="pl-2 border-l border-white/20 text-center">
+            <span class="text-[10px] uppercase font-semibold text-orange-200 block">Variação</span>
+            <span class="text-sm font-extrabold px-2 py-0.5 rounded text-white bg-white/20 inline-block mt-0.5" id="reg-diff">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumo de Lojas + Destaques em Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       
-      <!-- Card 1: Balanço Geral da Regional -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-sm card-transition card-box-neutral flex flex-col justify-between">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-movida block">📊 Balanço da Regional</span>
-        <div class="grid grid-cols-3 gap-1.5 mt-2.5 text-center">
-          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-1.5">
-            <span class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 block" id="count-up">0</span>
-            <span class="text-[9px] text-emerald-700 dark:text-emerald-300 font-semibold uppercase">Subiram 🚀</span>
+      <!-- Contador de Resumo da Regional -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm dark:shadow-md flex flex-col justify-between card-box-dark">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-movida block">📊 Balanço das Lojas</span>
+        <div class="grid grid-cols-3 gap-1 mt-2 text-center">
+          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-1">
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block" id="count-up">0</span>
+            <span class="text-[9px] text-emerald-700 dark:text-emerald-300 font-medium">Subiram 🚀</span>
           </div>
-          <div class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1.5">
-            <span class="text-base font-extrabold text-slate-600 dark:text-slate-300 block" id="count-equal">0</span>
-            <span class="text-[9px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Mantiveram ➖</span>
+          <div class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block" id="count-equal">0</span>
+            <span class="text-[9px] text-slate-500 dark:text-slate-400 font-medium">Mantiveram ➖</span>
           </div>
-          <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-1.5">
-            <span class="text-base font-extrabold text-rose-600 dark:text-rose-400 block" id="count-down">0</span>
-            <span class="text-[9px] text-rose-700 dark:text-rose-300 font-semibold uppercase">Caíram 🔻</span>
+          <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-1">
+            <span class="text-xs font-bold text-rose-600 dark:text-rose-400 block" id="count-down">0</span>
+            <span class="text-[9px] text-rose-700 dark:text-rose-300 font-medium">Caíram 🔻</span>
           </div>
         </div>
       </div>
 
-      <!-- Card 2: Maior Evolução Positiva -->
-      <div class="bg-white dark:bg-slate-900 border border-emerald-500/40 rounded-xl p-3.5 shadow-sm card-transition relative overflow-hidden card-box">
+      <!-- Destaque Positivo -->
+      <div class="bg-white dark:bg-slate-900 border border-emerald-500/40 rounded-xl p-3 shadow-sm dark:shadow-md relative overflow-hidden card-box">
         <div class="absolute top-0 right-0 w-1.5 h-full bg-emerald-500"></div>
         <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">🚀 Maior Evolução</span>
-        <div class="mt-1.5 flex justify-between items-baseline gap-2">
-          <h2 id="top-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h2>
-          <span id="top-store-var" class="text-sm font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">--</span>
+        <div class="mt-1 flex justify-between items-baseline gap-2">
+          <h3 id="top-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h3>
+          <span id="top-store-var" class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">--</span>
         </div>
-        <p id="top-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Carregue os dados para analisar</p>
+        <p id="top-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400">--</p>
       </div>
 
-      <!-- Card 3: Maior Queda -->
-      <div class="bg-white dark:bg-slate-900 border border-rose-500/40 rounded-xl p-3.5 shadow-sm card-transition relative overflow-hidden card-box">
+      <!-- Destaque Negativo -->
+      <div class="bg-white dark:bg-slate-900 border border-rose-500/40 rounded-xl p-3 shadow-sm dark:shadow-md relative overflow-hidden card-box">
         <div class="absolute top-0 right-0 w-1.5 h-full bg-rose-500"></div>
         <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 block">🔻 Maior Queda</span>
-        <div class="mt-1.5 flex justify-between items-baseline gap-2">
-          <h2 id="low-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h2>
-          <span id="low-store-var" class="text-sm font-black text-rose-600 dark:text-rose-400 whitespace-nowrap">--</span>
+        <div class="mt-1 flex justify-between items-baseline gap-2">
+          <h3 id="low-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h3>
+          <span id="low-store-var" class="text-sm font-extrabold text-rose-600 dark:text-rose-400 whitespace-nowrap">--</span>
         </div>
-        <p id="low-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Carregue os dados para analisar</p>
+        <p id="low-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400">--</p>
       </div>
 
     </div>
 
-    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-md overflow-hidden border border-slate-200 dark:border-slate-800 card-box-neutral">
-      <div class="px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/90">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-movida">Ranking de Lojas da Regional</h3>
-        <span id="total-regional" class="text-xs font-bold px-3 py-1 bg-movida/15 dark:bg-movida/20 border border-movida/30 rounded-full text-movida">
-          Média Regional: --
+    <!-- Tabela de Ranking das Lojas -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-md dark:shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800 card-box-dark">
+      <div class="px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/80">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-movida">Ranking Individual de Lojas</h3>
+        <span id="total-regional-tag" class="text-xs font-bold px-2.5 py-0.5 bg-movida/15 dark:bg-movida/20 border border-movida/30 rounded-full text-movida">
+          Total de Lojas: 0
         </span>
       </div>
       
@@ -206,23 +210,17 @@
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800">
             <tr>
-              <th class="py-2.5 px-2 text-center w-8">#</th>
-              <th class="py-2.5 px-3">Loja / Cidade</th>
-              <th class="py-2.5 px-3 text-right" id="th-prev">Anterior</th>
-              <th class="py-2.5 px-3 text-right" id="th-curr">Atual</th>
-              <th class="py-2.5 px-3 text-center w-36">Evolução / Barra</th>
-              <th class="py-2.5 px-2 text-center w-20">Variação</th>
+              <th class="py-2 px-2 text-center w-6">#</th>
+              <th class="py-2 px-3">Loja / Cidade</th>
+              <th class="py-2 px-3 text-right" id="th-prev">Anterior</th>
+              <th class="py-2 px-3 text-right" id="th-curr">Atual</th>
+              <th class="py-2 px-3 text-center w-36">Evolução / Barra</th>
+              <th class="py-2 px-2 text-center w-16">Variação</th>
             </tr>
           </thead>
           <tbody id="table-body" class="divide-y divide-slate-200 dark:divide-slate-800/60">
             <tr>
-              <td colspan="6" class="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
-                <div class="flex flex-col items-center gap-1.5">
-                  <span class="text-xl">📂</span>
-                  <span>Aguardando envio do arquivo CSV...</span>
-                  <span class="text-[10px] text-slate-400">Clique no botão "Carregar CSV Local" no topo para importar.</span>
-                </div>
-              </td>
+              <td colspan="6" class="py-6 text-center text-slate-400 dark:text-slate-500 text-xs">Aguardando envio do arquivo CSV...</td>
             </tr>
           </tbody>
         </table>
@@ -232,141 +230,70 @@
   </div>
 
   <script>
-    // ==========================================
-    // 1. GERENCIADOR DE TEMA DARK / LIGHT
-    // ==========================================
-    (function initTheme() {
-      const htmlEl = document.documentElement;
-      const themeBtn = document.getElementById('theme-toggle');
-      const themeIcon = document.getElementById('theme-toggle-icon');
-      const themeText = document.getElementById('theme-toggle-text');
+    // Gerenciador de Tema
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-toggle-icon');
+    const themeText = document.getElementById('theme-toggle-text');
 
-      function applyTheme(isDark) {
-        if (isDark) {
-          htmlEl.classList.add('dark');
-          if (themeIcon) themeIcon.textContent = '☀️';
-          if (themeText) themeText.textContent = 'Modo Claro';
-          localStorage.setItem('movida_theme', 'dark');
-        } else {
-          htmlEl.classList.remove('dark');
-          if (themeIcon) themeIcon.textContent = '🌙';
-          if (themeText) themeText.textContent = 'Modo Escuro';
-          localStorage.setItem('movida_theme', 'light');
-        }
-      }
-
-      // Detecta tema salvo ou preferência do sistema
-      const savedTheme = localStorage.getItem('movida_theme');
-      if (savedTheme) {
-        applyTheme(savedTheme === 'dark');
+    function setTheme(isDark) {
+      if (isDark) {
+        htmlEl.classList.add('dark');
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Modo Claro';
+        localStorage.setItem('theme', 'dark');
       } else {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        applyTheme(prefersDark);
+        htmlEl.classList.remove('dark');
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Modo Escuro';
+        localStorage.setItem('theme', 'light');
       }
+    }
 
-      if (themeBtn) {
-        themeBtn.addEventListener('click', function () {
-          const currentlyDark = htmlEl.classList.contains('dark');
-          applyTheme(!currentlyDark);
-        });
-      }
-    })();
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+      setTheme(false);
+    } else {
+      setTheme(true);
+    }
 
-    // ==========================================
-    // 2. LEITURA E PARSER ROBUSTO DE CSV
-    // ==========================================
-    document.getElementById('csv-file-input').addEventListener('change', function (e) {
+    themeBtn.addEventListener('click', () => {
+      setTheme(!htmlEl.classList.contains('dark'));
+    });
+
+    // Leitura do Arquivo CSV
+    document.getElementById('csv-file-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // Utiliza FileReader nativo para ler como texto com codificação garantida
       const reader = new FileReader();
 
-      reader.onload = function (event) {
+      reader.onload = function(event) {
         let content = event.target.result;
-        
-        // Verifica se há caracteres desconfigurados de ANSI/ISO-8859-1 e relê se necessário
-        if (content.includes('')) {
-          const readerIso = new FileReader();
-          readerIso.onload = function (isoEvent) {
-            parseCSVContent(isoEvent.target.result);
-          };
-          readerIso.readAsText(file, "ISO-8859-1");
-        } else {
-          parseCSVContent(content);
-        }
-      };
 
-      // Tenta ler prioritariamente como UTF-8
-      reader.readAsText(file, "UTF-8");
-    });
-
-    function parseCSVContent(csvText) {
-      if (!csvText || !csvText.trim()) {
-        alert("O arquivo selecionado está vazio.");
-        return;
-      }
-
-      // Detecção de delimitador se PapaParse não for carregado externamente
-      let delimiter = ",";
-      const firstLine = csvText.split(/\r\n|\n/)[0] || "";
-      if ((firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length) {
-        delimiter = ";";
-      }
-
-      if (typeof Papa !== 'undefined') {
-        Papa.parse(csvText, {
+        Papa.parse(content, {
           header: true,
-          delimiter: delimiter,
           skipEmptyLines: true,
-          complete: function (results) {
+          complete: (results) => {
             if (results.data && results.data.length > 0) {
               processData(results.data);
             } else {
-              alert("Não foi possível extrair dados válidos do CSV.");
+              alert("Não foi possível extrair linhas do arquivo CSV.");
             }
           },
-          error: function (err) {
-            alert("Erro ao processar o CSV: " + err.message);
+          error: (err) => {
+            alert("Erro ao processar CSV: " + err.message);
           }
         });
-      } else {
-        // Fallback para parser manual de CSV se o script CDN falhar
-        const parsed = manualCSVParse(csvText, delimiter);
-        if (parsed.length > 0) {
-          processData(parsed);
-        } else {
-          alert("Falha na interpretação do arquivo CSV.");
-        }
-      }
-    }
+      };
 
-    // Parser manual simples para casos offline ou sem CDN
-    function manualCSVParse(text, delimiter) {
-      const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
-      if (lines.length < 2) return [];
-
-      const headers = lines[0].split(delimiter).map(h => h.trim().replace(/^"|"$/g, ''));
-      const rows = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(delimiter).map(c => c.trim().replace(/^"|"$/g, ''));
-        if (cols.length >= headers.length) {
-          let rowObj = {};
-          headers.forEach((h, index) => {
-            rowObj[h] = cols[index] || "";
-          });
-          rows.push(rowObj);
-        }
-      }
-      return rows;
-    }
+      reader.readAsText(file, 'ISO-8859-1');
+    });
 
     function parseNPS(value) {
       if (value === undefined || value === null) return 0;
       let clean = value.toString().replace('%', '').replace(',', '.').trim();
-      let num = parseFloat(clean);
-      return isNaN(num) ? 0 : num;
+      return parseFloat(clean) || 0;
     }
 
     function processData(data) {
@@ -374,7 +301,7 @@
 
       const keys = Object.keys(data[0]);
       if (keys.length < 3) {
-        alert("O CSV deve possuir ao menos 3 colunas (ex: Loja, NPS Anterior, NPS Atual).");
+        alert("O arquivo CSV precisa ter no mínimo 3 colunas (Loja, NPS Anterior, NPS Atual).");
         return;
       }
 
@@ -387,7 +314,7 @@
       document.getElementById('th-curr').textContent = currKey;
 
       let items = [];
-      let totalRowNps = null;
+      let totalRow = null;
 
       let upCount = 0;
       let downCount = 0;
@@ -405,7 +332,7 @@
 
         const lowerName = storeName.toLowerCase();
         if (lowerName.includes('total') || lowerName.includes('rac sp') || lowerName.includes('regional')) {
-          totalRowNps = curr;
+          totalRow = obj;
         } else {
           items.push(obj);
 
@@ -419,26 +346,38 @@
         }
       });
 
-      // Atualiza contadores
+      // Atualização dos Contadores
       document.getElementById('count-up').textContent = upCount;
       document.getElementById('count-equal').textContent = equalCount;
       document.getElementById('count-down').textContent = downCount;
+      document.getElementById('total-regional-tag').textContent = `Total de Lojas: ${items.length}`;
 
-      // Ordena lojas do maior NPS atual para o menor
-      items.sort((a, b) => b.curr - a.curr);
+      // CÁLCULO DA MÉDIA REGIONAL
+      let regPrev = 0;
+      let regCurr = 0;
 
-      // Média Regional
-      let mediaRegional = 0;
-      if (totalRowNps !== null) {
-        mediaRegional = totalRowNps;
+      if (totalRow) {
+        regPrev = totalRow.prev;
+        regCurr = totalRow.curr;
       } else if (items.length > 0) {
-        const soma = items.reduce((acc, item) => acc + item.curr, 0);
-        mediaRegional = soma / items.length;
+        const sumPrev = items.reduce((acc, item) => acc + item.prev, 0);
+        const sumCurr = items.reduce((acc, item) => acc + item.curr, 0);
+        regPrev = sumPrev / items.length;
+        regCurr = sumCurr / items.length;
       }
 
-      document.getElementById('total-regional').textContent = `Média Regional: ${mediaRegional.toFixed(2)}%`;
+      const regDiff = regCurr - regPrev;
+      const isRegPos = regDiff >= 0;
 
-      // Destaques (Maior Evolução e Maior Queda)
+      document.getElementById('reg-prev').textContent = `${regPrev.toFixed(2)}%`;
+      document.getElementById('reg-curr').textContent = `${regCurr.toFixed(2)}%`;
+      document.getElementById('reg-diff').textContent = `${isRegPos ? '+' : ''}${regDiff.toFixed(2)}%`;
+      document.getElementById('regional-card-subtitle').textContent = `Média ponderada entre ${prevKey} e ${currKey}`;
+
+      // Ordena Lojas do Maior NPS Atual para o Menor
+      items.sort((a, b) => b.curr - a.curr);
+
+      // Destaques de Maior Evolução e Maior Queda
       const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
       const topStore = sortedByDiff[0];
       const lowStore = sortedByDiff[sortedByDiff.length - 1];
@@ -446,58 +385,9 @@
       if (topStore) {
         document.getElementById('top-store-name').textContent = topStore.name;
         document.getElementById('top-store-var').textContent = `+${topStore.diff.toFixed(2)}%`;
-        document.getElementById('top-store-detail').textContent = `Evoluiu de ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
+        document.getElementById('top-store-detail').textContent = `De ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
       }
 
       if (lowStore) {
         document.getElementById('low-store-name').textContent = lowStore.name;
-        document.getElementById('low-store-var').textContent = `${lowStore.diff.toFixed(2)}%`;
-        document.getElementById('low-store-detail').textContent = `Variou de ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
-      }
-
-      // Renderização da Tabela
-      const maxAbsDiff = Math.max(...items.map(i => Math.abs(i.diff)), 1);
-      const tbody = document.getElementById('table-body');
-      tbody.innerHTML = '';
-
-      items.forEach((item, index) => {
-        const isPositive = item.diff > 0;
-        const isNeutral = Math.abs(item.diff) < 0.001;
-        
-        let diffColorClass = 'text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800';
-        let barBgClass = 'bg-slate-400 dark:bg-slate-500';
-
-        if (isPositive) {
-          diffColorClass = 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15';
-          barBgClass = 'bg-emerald-500';
-        } else if (!isNeutral) {
-          diffColorClass = 'text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15';
-          barBgClass = 'bg-rose-500';
-        }
-
-        const barWidthPercent = Math.min(Math.round((Math.abs(item.diff) / maxAbsDiff) * 100), 100);
-
-        const diffBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] ${diffColorClass} font-bold inline-block w-14 text-center">${isPositive ? '+' : ''}${item.diff.toFixed(2)}%</span>`;
-
-        const progressBarHtml = `
-          <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden flex items-center progress-bar-bg">
-            <div class="${barBgClass} h-full transition-all duration-300" style="width: ${barWidthPercent}%;"></div>
-          </div>
-        `;
-
-        const row = document.createElement('tr');
-        row.className = "hover:bg-slate-100 dark:hover:bg-slate-800/40 transition";
-        row.innerHTML = `
-          <td class="py-2 px-2 text-center font-bold text-slate-400 dark:text-slate-500">${index + 1}</td>
-          <td class="py-2 px-3 font-medium text-slate-800 dark:text-slate-100 truncate max-w-[200px]">${item.name}</td>
-          <td class="py-2 px-3 text-right text-slate-500 dark:text-slate-400">${item.prev.toFixed(2)}%</td>
-          <td class="py-2 px-3 text-right font-bold text-movida">${item.curr.toFixed(2)}%</td>
-          <td class="py-2 px-3 text-center">${progressBarHtml}</td>
-          <td class="py-2 px-2 text-center">${diffBadge}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-  </script>
-</body>
-</html>
+        document.getElementById('low-store-var').textContent
