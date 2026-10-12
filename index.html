@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Acompanhamento Diário de NPS - Movida Regional</title>
-  <!-- Tailwind CSS para estilização -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -22,7 +22,7 @@
       }
     }
   </script>
-  <!-- PapaParse para leitura de CSV -->
+  <!-- PapaParse para CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
@@ -42,31 +42,30 @@
         padding: 0 !important;
       }
       .card-box {
-        border: 1px solid #e2e8f0 !important;
+        border: 1px solid #cbd5e1 !important;
         background-color: #f8fafc !important;
         box-shadow: none !important;
       }
       table {
-        font-size: 10px !important;
+        font-size: 9px !important;
       }
       th, td {
-        padding: 3px 6px !important;
+        padding: 2px 4px !important;
       }
       @page {
         size: A4 portrait;
-        margin: 8mm;
+        margin: 6mm;
       }
     }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6 font-sans">
 
-  <div class="max-w-5xl mx-auto space-y-4 print-container">
+  <div class="max-w-5xl mx-auto space-y-3 print-container">
     
-    <!-- Cabeçalho com Brand Movida -->
+    <!-- Cabeçalho -->
     <header class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 gap-3">
       <div class="flex items-center gap-3">
-        <!-- Badge Laranja Movida -->
         <div class="bg-movida text-white font-black text-xl px-3 py-1 rounded-lg tracking-wider">
           MOVIDA
         </div>
@@ -88,12 +87,32 @@
       </div>
     </header>
 
-    <!-- Cards de Destaques Compactos -->
-    <div class="grid grid-cols-2 gap-3">
+    <!-- Resumo de Lojas + Destaques em Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      
+      <!-- Contador de Resumo da Regional -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md flex flex-col justify-between card-box">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-movida block">📊 Balanço da Regional</span>
+        <div class="grid grid-cols-3 gap-1 mt-2 text-center">
+          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-1">
+            <span class="text-xs font-bold text-emerald-400 block" id="count-up">0</span>
+            <span class="text-[9px] text-emerald-300 font-medium">Subiram 🚀</span>
+          </div>
+          <div class="bg-slate-800/80 border border-slate-700 rounded-lg p-1">
+            <span class="text-xs font-bold text-slate-300 block" id="count-equal">0</span>
+            <span class="text-[9px] text-slate-400 font-medium">Mantiveram ➖</span>
+          </div>
+          <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-1">
+            <span class="text-xs font-bold text-rose-400 block" id="count-down">0</span>
+            <span class="text-[9px] text-rose-300 font-medium">Caíram 🔻</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Destaque Positivo -->
       <div class="bg-slate-900 border border-emerald-500/40 rounded-xl p-3 shadow-md relative overflow-hidden card-box">
         <div class="absolute top-0 right-0 w-1.5 h-full bg-emerald-500"></div>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">🚀 Maior Evolução (Destaque Positivo)</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">🚀 Maior Evolução</span>
         <div class="mt-1 flex justify-between items-baseline gap-2">
           <h2 id="top-store-name" class="text-sm md:text-base font-bold text-white truncate">--</h2>
           <span id="top-store-var" class="text-sm font-extrabold text-emerald-400 whitespace-nowrap">--</span>
@@ -104,16 +123,17 @@
       <!-- Destaque Negativo -->
       <div class="bg-slate-900 border border-rose-500/40 rounded-xl p-3 shadow-md relative overflow-hidden card-box">
         <div class="absolute top-0 right-0 w-1.5 h-full bg-rose-500"></div>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 block">🔻 Maior Queda (Destaque Negativo)</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 block">🔻 Maior Queda</span>
         <div class="mt-1 flex justify-between items-baseline gap-2">
           <h2 id="low-store-name" class="text-sm md:text-base font-bold text-white truncate">--</h2>
           <span id="low-store-var" class="text-sm font-extrabold text-rose-400 whitespace-nowrap">--</span>
         </div>
         <p id="low-store-detail" class="text-[11px] text-slate-400">--</p>
       </div>
+
     </div>
 
-    <!-- Tabela de Ranking Ultra Compacta -->
+    <!-- Tabela de Ranking das Lojas -->
     <div class="bg-slate-900 rounded-xl shadow-xl overflow-hidden border border-slate-800 card-box">
       <div class="px-4 py-2 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
         <h3 class="text-xs font-bold uppercase tracking-wider text-movida">Ranking de Lojas</h3>
@@ -126,16 +146,17 @@
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-950 text-slate-400 text-[10px] uppercase border-b border-slate-800">
             <tr>
-              <th class="py-2 px-3 text-center w-8">#</th>
+              <th class="py-2 px-2 text-center w-6">#</th>
               <th class="py-2 px-3">Loja / Cidade</th>
               <th class="py-2 px-3 text-right" id="th-prev">Anterior</th>
               <th class="py-2 px-3 text-right" id="th-curr">Atual</th>
-              <th class="py-2 px-3 text-center w-24">Variação</th>
+              <th class="py-2 px-3 text-center w-36">Evolução / Barra</th>
+              <th class="py-2 px-2 text-center w-16">Variação</th>
             </tr>
           </thead>
           <tbody id="table-body" class="divide-y divide-slate-800/60">
             <tr>
-              <td colspan="5" class="py-6 text-center text-slate-500 text-xs">Aguardando envio do arquivo CSV...</td>
+              <td colspan="6" class="py-6 text-center text-slate-500 text-xs">Aguardando envio do arquivo CSV...</td>
             </tr>
           </tbody>
         </table>
@@ -166,9 +187,9 @@
       if (!data || data.length === 0) return;
 
       const keys = Object.keys(data[0]);
-      const storeKey = keys[0]; // Primeira coluna (Loja/Cidade)
-      const prevKey = keys[keys.length - 2]; // Penúltima coluna
-      const currKey = keys[keys.length - 1]; // Última coluna
+      const storeKey = keys[0];
+      const prevKey = keys[keys.length - 2];
+      const currKey = keys[keys.length - 1];
 
       document.getElementById('subtitle-info').textContent = `Comparativo: ${prevKey} vs ${currKey}`;
       document.getElementById('th-prev').textContent = prevKey;
@@ -176,6 +197,10 @@
 
       let items = [];
       let totalRow = null;
+
+      let upCount = 0;
+      let downCount = 0;
+      let equalCount = 0;
 
       data.forEach(row => {
         const storeName = row[storeKey];
@@ -191,58 +216,24 @@
           totalRow = obj;
         } else {
           items.push(obj);
+
+          // Contadores de subiram, caíram e mantiveram
+          if (Math.abs(diff) < 0.001) {
+            equalCount++;
+          } else if (diff > 0) {
+            upCount++;
+          } else {
+            downCount++;
+          }
         }
       });
 
-      // Ordena da melhor loja para a pior loja por NPS Atual
+      // Atualiza contadores do card de resumo
+      document.getElementById('count-up').textContent = upCount;
+      document.getElementById('count-equal').textContent = equalCount;
+      document.getElementById('count-down').textContent = downCount;
+
+      // Ordena por NPS Atual (maior para o menor)
       items.sort((a, b) => b.curr - a.curr);
 
       // Atualiza Total Regional
-      if (totalRow) {
-        document.getElementById('total-regional').textContent = `Média Regional: ${totalRow.curr.toFixed(2)}%`;
-      }
-
-      // Identifica Destaques por Variação
-      const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
-      const topStore = sortedByDiff[0];
-      const lowStore = sortedByDiff[sortedByDiff.length - 1];
-
-      // Atualiza Card Positivo
-      if (topStore) {
-        document.getElementById('top-store-name').textContent = topStore.name;
-        document.getElementById('top-store-var').textContent = `+${topStore.diff.toFixed(2)}%`;
-        document.getElementById('top-store-detail').textContent = `Subiu de ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
-      }
-
-      // Atualiza Card Negativo
-      if (lowStore) {
-        document.getElementById('low-store-name').textContent = lowStore.name;
-        document.getElementById('low-store-var').textContent = `${lowStore.diff.toFixed(2)}%`;
-        document.getElementById('low-store-detail').textContent = `Caiu de ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
-      }
-
-      // Preenche a Tabela com Linhas Enxutas
-      const tbody = document.getElementById('table-body');
-      tbody.innerHTML = '';
-
-      items.forEach((item, index) => {
-        const isPositive = item.diff >= 0;
-        const diffBadge = isPositive 
-          ? `<span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-400 font-bold inline-block w-16 text-center">+${item.diff.toFixed(2)}%</span>`
-          : `<span class="px-1.5 py-0.5 rounded text-[10px] bg-rose-500/15 text-rose-400 font-bold inline-block w-16 text-center">${item.diff.toFixed(2)}%</span>`;
-
-        const row = document.createElement('tr');
-        row.className = "hover:bg-slate-800/40 transition";
-        row.innerHTML = `
-          <td class="py-1.5 px-3 text-center font-bold text-slate-500">${index + 1}</td>
-          <td class="py-1.5 px-3 font-medium text-slate-100 truncate max-w-[220px]">${item.name}</td>
-          <td class="py-1.5 px-3 text-right text-slate-400">${item.prev.toFixed(2)}%</td>
-          <td class="py-1.5 px-3 text-right font-bold text-movida">${item.curr.toFixed(2)}%</td>
-          <td class="py-1.5 px-3 text-center">${diffBadge}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-  </script>
-</body>
-</html>
