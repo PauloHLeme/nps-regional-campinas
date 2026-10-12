@@ -3,387 +3,936 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acompanhamento Diário de NPS - Movida Regional</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            movida: {
-              DEFAULT: '#FF6600',
-              hover: '#E55C00',
-              dark: '#CC5200',
-              light: '#FFF0E6'
-            }
-          }
-        }
-      }
-    }
-  </script>
-
+  <title>Painel Regional de NPS - Movida</title>
+  
   <style>
-    /* Estilos para Impressão e PDF */
+    /*deploy 11*/
+    /* ==========================================================================
+       1. VARIÁVEIS DE DESIGN SYSTEM & TEMAS (LIGHT / DARK)
+       ========================================================================== */
+    :root {
+      /* Identidade de Marca Movida */
+      --movida-orange: #FF6600;
+      --movida-hover: #E55C00;
+      --movida-dark: #CC5200;
+      --movida-light: #FFF0E6;
+
+      /* Cores do Modo Claro */
+      --bg-main: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-header: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-hover: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+
+      /* Destaques Indicadores */
+      --emerald-bg: #ecfdf5;
+      --emerald-border: #a7f3d0;
+      --emerald-text: #047857;
+      --emerald-bar: #10b981;
+
+      --rose-bg: #fff1f2;
+      --rose-border: #fecdd3;
+      --rose-text: #be123c;
+      --rose-bar: #f43f5e;
+
+      --neutral-bg: #f8fafc;
+      --neutral-border: #e2e8f0;
+      --neutral-text: #475569;
+      --neutral-bar: #94a3b8;
+    }
+
+    html.dark {
+      /* Cores do Modo Escuro */
+      --bg-main: #090d16;
+      --bg-card: #111827;
+      --bg-header: #111827;
+      --bg-subtle: #1f2937;
+      --bg-hover: #1f2937;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --border-color: #1f2937;
+      --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+
+      --emerald-bg: rgba(16, 185, 129, 0.12);
+      --emerald-border: rgba(16, 185, 129, 0.3);
+      --emerald-text: #34d399;
+      --emerald-bar: #10b981;
+
+      --rose-bg: rgba(244, 63, 94, 0.12);
+      --rose-border: rgba(244, 63, 94, 0.3);
+      --rose-text: #fb7185;
+      --rose-bar: #f43f5e;
+
+      --neutral-bg: rgba(148, 163, 184, 0.1);
+      --neutral-border: rgba(148, 163, 184, 0.2);
+      --neutral-text: #cbd5e1;
+      --neutral-bar: #64748b;
+    }
+
+    /* Reset global simples */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px;
+      line-height: 1.5;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* CONTAINER PRINCIPAL */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* CABEÇALHO DA APLICAÇÃO */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--bg-header);
+      padding: 16px 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--card-shadow);
+      gap: 12px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      background-color: var(--movida-orange);
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 1.25rem;
+      letter-spacing: 1px;
+      padding: 6px 14px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(255, 102, 0, 0.3);
+    }
+
+    .brand-title h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+      line-height: 1.2;
+    }
+
+    .brand-title p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .actions-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* BOTÕES CUSTOMIZADOS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-subtle);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn:hover {
+      background-color: var(--bg-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background-color: var(--movida-orange);
+      color: #ffffff;
+      border-color: var(--movida-orange);
+      box-shadow: 0 2px 8px rgba(255, 102, 0, 0.25);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--movida-hover);
+      border-color: var(--movida-hover);
+    }
+
+    /* CARD HERO DESTAQUE CRÍTICO DA REGIONAL */
+    .hero-card {
+      background: linear-gradient(135deg, #CC5200 0%, #FF6600 50%, #ff8533 100%);
+      color: #ffffff;
+      border-radius: 16px;
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(255, 102, 0, 0.25);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .hero-card::after {
+      content: "NPS";
+      position: absolute;
+      right: -10px;
+      bottom: -20px;
+      font-size: 8rem;
+      font-weight: 900;
+      opacity: 0.08;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .hero-info .tag {
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #ffe4d6;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .hero-info h2 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .hero-info p {
+      font-size: 0.8rem;
+      color: #fff0e6;
+      margin-top: 2px;
+    }
+
+    .hero-metrics {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(8px);
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .metric-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-group .label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #ffe4d6;
+    }
+
+    .metric-group .value {
+      font-size: 1.25rem;
+      font-weight: 800;
+    }
+
+    .metric-group .value-large {
+      font-size: 1.75rem;
+      font-weight: 900;
+    }
+
+    .hero-arrow {
+      font-size: 1.2rem;
+      color: #ffd1b3;
+    }
+
+    .hero-badge {
+      background: rgba(255, 255, 255, 0.25);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      align-self: center;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* GRID DE CARDS SECUNDÁRIOS */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title.up { color: var(--emerald-text); }
+    .card-title.down { color: var(--rose-text); }
+    .card-title.summary { color: var(--movida-orange); }
+
+    .balance-boxes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .balance-item {
+      padding: 6px 4px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+    }
+
+    .balance-item.up { background-color: var(--emerald-bg); border-color: var(--emerald-border); color: var(--emerald-text); }
+    .balance-item.neutral { background-color: var(--neutral-bg); border-color: var(--neutral-border); color: var(--neutral-text); }
+    .balance-item.down { background-color: var(--rose-bg); border-color: var(--rose-border); color: var(--rose-text); }
+
+    .balance-num {
+      font-size: 1.1rem;
+      font-weight: 900;
+      display: block;
+      line-height: 1;
+    }
+
+    .balance-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 3px;
+      display: block;
+    }
+
+    .highlight-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .highlight-store {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .highlight-val {
+      font-size: 0.95rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .highlight-val.up { color: var(--emerald-text); }
+    .highlight-val.down { color: var(--rose-text); }
+
+    .highlight-detail {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* TABELA DE RANKING */
+    .table-card {
+      background-color: var(--bg-card);
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 12px 16px;
+      background-color: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-header h3 {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--movida-orange);
+    }
+
+    .badge-count {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background-color: rgba(255, 102, 0, 0.12);
+      color: var(--movida-orange);
+      border: 1px solid rgba(255, 102, 0, 0.25);
+    }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.8rem;
+    }
+
+    th {
+      background-color: var(--bg-subtle);
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: var(--bg-hover);
+    }
+
+    .col-rank { text-align: center; font-weight: 800; color: var(--text-muted); width: 40px; }
+    .col-store { font-weight: 700; }
+    .col-num { text-align: right; white-space: nowrap; }
+    .col-curr { font-weight: 900; color: var(--movida-orange); }
+    .col-bar { text-align: center; width: 180px; }
+    .col-var { text-align: center; width: 80px; }
+
+    /* Barra de progresso visual */
+    .bar-bg {
+      width: 100%;
+      height: 7px;
+      background-color: var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    .bar-fill.up { background-color: var(--emerald-bar); }
+    .bar-fill.down { background-color: var(--rose-bar); }
+    .bar-fill.neutral { background-color: var(--neutral-bar); }
+
+    /* Badges de Variação */
+    .badge-var {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      width: 62px;
+      text-align: center;
+    }
+
+    .badge-var.up { background-color: var(--emerald-bg); color: var(--emerald-text); }
+    .badge-var.down { background-color: var(--rose-bg); color: var(--rose-text); }
+    .badge-var.neutral { background-color: var(--neutral-bg); color: var(--neutral-text); }
+
+    .empty-state {
+      padding: 40px 16px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .empty-state span {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    /* IMPRESSÃO / PDF EM A4 */
     @media print {
       body {
         background-color: #ffffff !important;
         color: #0f172a !important;
         padding: 0 !important;
+        font-size: 10px !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
+
       .no-print {
         display: none !important;
       }
-      .print-container {
+
+      .container {
         max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        gap: 8px !important;
       }
-      .print-header {
+
+      header {
         background-color: #FF6600 !important;
         color: #ffffff !important;
-        padding: 10px 14px !important;
-        border-radius: 8px !important;
-        margin-bottom: 8px !important;
+        border: none !important;
+        padding: 8px 12px !important;
+        border-radius: 6px !important;
       }
-      .print-header h1, .print-header p {
+
+      .brand-title h1, .brand-title p {
         color: #ffffff !important;
       }
-      .card-box {
-        border: 1px solid #fed7aa !important;
-        background-color: #fff7ed !important;
-        box-shadow: none !important;
+
+      .hero-card {
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
       }
-      .card-box-dark {
-        border: 1px solid #e2e8f0 !important;
+
+      .grid-cards {
+        gap: 6px !important;
+      }
+
+      .card {
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        padding: 8px 10px !important;
+        border-radius: 6px !important;
         background-color: #f8fafc !important;
-        box-shadow: none !important;
       }
+
+      .table-card {
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: none !important;
+        border-radius: 6px !important;
+      }
+
       table {
         font-size: 8.5px !important;
-        width: 100% !important;
-        border-collapse: collapse !important;
       }
-      th {
-        background-color: #fff7ed !important;
-        color: #c2410c !important;
-        border-bottom: 2px solid #ff6600 !important;
-        padding: 3px 5px !important;
+
+      th, td {
+        padding: 3px 6px !important;
       }
-      td {
-        padding: 2.5px 5px !important;
-        border-bottom: 1px solid #e2e8f0 !important;
-        color: #1e293b !important;
-      }
+
       @page {
         size: A4 portrait;
-        margin: 6mm;
+        margin: 8mm 6mm;
       }
     }
   </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen p-3 md:p-6 font-sans transition-colors duration-200">
+<body>
 
-  <div class="max-w-5xl mx-auto space-y-3 print-container">
+  <div class="container">
     
-    <!-- Cabeçalho Principal -->
-    <header class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300 dark:border-slate-800 pb-3 gap-3 print-header">
-      <div class="flex items-center gap-3">
-        <div class="bg-movida text-white font-black text-xl px-3 py-1 rounded-lg tracking-wider shadow-md">
-          MOVIDA
-        </div>
-        <div>
-          <h1 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">Painel Regional de NPS</h1>
-          <p class="text-slate-500 dark:text-slate-400 text-xs" id="subtitle-info">Aguardando envio do relatório CSV...</p>
+    <!-- CABEÇALHO PRINCIPAL DA MOVIDA -->
+    <header>
+      <div class="brand-section">
+        <div class="brand-logo">MOVIDA</div>
+        <div class="brand-title">
+          <h1>Painel Regional de NPS</h1>
+          <p id="subtitle-info">Selecione o relatório CSV local para atualizar o painel</p>
         </div>
       </div>
 
-      <!-- Botões de Ação -->
-      <div class="flex items-center gap-2 no-print">
-        <button id="btn-toggle-theme" type="button" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1.5 cursor-pointer">
+      <!-- BARRA DE FERRAMENTAS / AÇÕES -->
+      <div class="actions-toolbar no-print">
+        <!-- Alternador de Tema Dark / Light -->
+        <button id="btn-theme-toggle" type="button" class="btn">
           <span id="theme-icon">☀️</span>
           <span id="theme-text">Modo Claro</span>
         </button>
 
-        <button onclick="window.print()" type="button" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 flex items-center gap-1 font-semibold cursor-pointer">
-          🖨️ Imprimir / PDF
+        <!-- Botão de Impressão / Exportar em PDF -->
+        <button onclick="window.print()" type="button" class="btn">
+          <span>🖨️</span>
+          <span>Imprimir / PDF</span>
         </button>
         
-        <label class="bg-movida hover:bg-movida-hover text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition font-bold shadow-md shadow-movida/20 flex items-center gap-1">
-          📁 Carregar CSV Local
-          <input type="file" id="csv-file-input" accept=".csv, .txt, .tsv" class="hidden">
+        <!-- Botão de Envio de CSV -->
+        <label class="btn btn-primary">
+          <span>📁</span>
+          <span>Carregar CSV Local</span>
+          <input type="file" id="csv-file-input" accept=".csv, .txt, .tsv" style="display: none;">
         </label>
       </div>
     </header>
 
-    <!-- CARD DESTAQUE CRÍTICO: MÉDIA REGIONAL -->
-    <div class="bg-gradient-to-r from-movida-dark via-movida to-orange-500 rounded-xl p-4 text-white shadow-xl relative overflow-hidden card-box">
-      <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl font-black select-none pointer-events-none">
-        NPS
+    <!-- CARD HERO CRÍTICO: MÉDIA GERAL DA REGIONAL -->
+    <section class="hero-card">
+      <div class="hero-info">
+        <span class="tag">🎯 Indicador Chave da Regional</span>
+        <h2>Média Geral de NPS</h2>
+        <p id="hero-subtitle">Carregue o arquivo CSV para calcular os dados</p>
       </div>
-      <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <span class="text-[10px] font-black uppercase tracking-widest text-orange-200 block">🎯 Indicador Crítico Chave</span>
-          <h2 class="text-lg font-bold text-white">Média Geral da Regional</h2>
-          <p class="text-xs text-orange-100" id="regional-card-subtitle">Aguardando dados da planilha</p>
-        </div>
 
-        <div class="flex items-center gap-4 bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
-          <div class="text-right">
-            <span class="text-[10px] uppercase font-semibold text-orange-200 block">NPS Anterior</span>
-            <span class="text-base font-bold text-orange-100" id="reg-prev">--</span>
-          </div>
-          <div class="text-xl text-orange-300 font-light">➔</div>
-          <div>
-            <span class="text-[10px] uppercase font-semibold text-orange-200 block">NPS Atual</span>
-            <span class="text-2xl font-black text-white" id="reg-curr">--</span>
-          </div>
-          <div class="pl-2 border-l border-white/20 text-center">
-            <span class="text-[10px] uppercase font-semibold text-orange-200 block">Variação</span>
-            <span class="text-sm font-extrabold px-2 py-0.5 rounded text-white bg-white/20 inline-block mt-0.5" id="reg-diff">--</span>
-          </div>
+      <div class="hero-metrics">
+        <div class="metric-group">
+          <span class="label">NPS Anterior</span>
+          <span class="value" id="reg-prev">--</span>
         </div>
+        <span class="hero-arrow">➔</span>
+        <div class="metric-group">
+          <span class="label">NPS Atual</span>
+          <span class="value-large" id="reg-curr">--</span>
+        </div>
+        <div class="hero-badge" id="reg-diff">--</div>
       </div>
-    </div>
+    </section>
 
-    <!-- Resumo de Lojas + Destaques em Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <!-- GRID DE RESUMO E HIGHLIGHTS -->
+    <section class="grid-cards">
       
-      <!-- Contador de Resumo da Regional -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm dark:shadow-md flex flex-col justify-between card-box-dark">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-movida block">📊 Balanço das Lojas</span>
-        <div class="grid grid-cols-3 gap-1 mt-2 text-center">
-          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-1">
-            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block" id="count-up">0</span>
-            <span class="text-[9px] text-emerald-700 dark:text-emerald-300 font-medium">Subiram 🚀</span>
+      <!-- BALANÇO DE LOJAS DA REGIONAL -->
+      <div class="card">
+        <div class="card-title summary">
+          <span>📊 Balanço da Regional</span>
+        </div>
+        <div class="balance-boxes">
+          <div class="balance-item up">
+            <span class="balance-num" id="count-up">0</span>
+            <span class="balance-label">Subiram 🚀</span>
           </div>
-          <div class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
-            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block" id="count-equal">0</span>
-            <span class="text-[9px] text-slate-500 dark:text-slate-400 font-medium">Mantiveram ➖</span>
+          <div class="balance-item neutral">
+            <span class="balance-num" id="count-equal">0</span>
+            <span class="balance-label">Mantiveram ➖</span>
           </div>
-          <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-1">
-            <span class="text-xs font-bold text-rose-600 dark:text-rose-400 block" id="count-down">0</span>
-            <span class="text-[9px] text-rose-700 dark:text-rose-300 font-medium">Caíram 🔻</span>
+          <div class="balance-item down">
+            <span class="balance-num" id="count-down">0</span>
+            <span class="balance-label">Caíram 🔻</span>
           </div>
         </div>
       </div>
 
-      <!-- Destaque Positivo -->
-      <div class="bg-white dark:bg-slate-900 border border-emerald-500/40 rounded-xl p-3 shadow-sm dark:shadow-md relative overflow-hidden card-box">
-        <div class="absolute top-0 right-0 w-1.5 h-full bg-emerald-500"></div>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">🚀 Maior Evolução</span>
-        <div class="mt-1 flex justify-between items-baseline gap-2">
-          <h3 id="top-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h3>
-          <span id="top-store-var" class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">--</span>
+      <!-- MAIOR EVOLUÇÃO POSITIVA -->
+      <div class="card">
+        <div class="card-title up">
+          <span>🚀 Maior Evolução</span>
         </div>
-        <p id="top-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400">--</p>
-      </div>
-
-      <!-- Destaque Negativo -->
-      <div class="bg-white dark:bg-slate-900 border border-rose-500/40 rounded-xl p-3 shadow-sm dark:shadow-md relative overflow-hidden card-box">
-        <div class="absolute top-0 right-0 w-1.5 h-full bg-rose-500"></div>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 block">🔻 Maior Queda</span>
-        <div class="mt-1 flex justify-between items-baseline gap-2">
-          <h3 id="low-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h3>
-          <span id="low-store-var" class="text-sm font-extrabold text-rose-600 dark:text-rose-400 whitespace-nowrap">--</span>
+        <div class="highlight-content">
+          <span class="highlight-store" id="top-store-name">--</span>
+          <span class="highlight-val up" id="top-store-var">--</span>
         </div>
-        <p id="low-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400">--</p>
+        <div class="highlight-detail" id="top-store-detail">Aguardando dados...</div>
       </div>
 
-    </div>
-
-    <!-- Tabela de Ranking das Lojas -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-md dark:shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800 card-box-dark">
-      <div class="px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/80">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-movida">Ranking Individual de Lojas</h3>
-        <span id="total-regional-tag" class="text-xs font-bold px-2.5 py-0.5 bg-movida/15 dark:bg-movida/20 border border-movida/30 rounded-full text-movida">
-          Total de Lojas: 0
-        </span>
+      <!-- MAIOR QUEDA NEGATIVA -->
+      <div class="card">
+        <div class="card-title down">
+          <span>🔻 Maior Queda</span>
+        </div>
+        <div class="highlight-content">
+          <span class="highlight-store" id="low-store-name">--</span>
+          <span class="highlight-val down" id="low-store-var">--</span>
+        </div>
+        <div class="highlight-detail" id="low-store-detail">Aguardando dados...</div>
       </div>
-      
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800">
+
+    </section>
+
+    <!-- TABELA DE RANKING INDIVIDUAL DE LOJAS -->
+    <section class="table-card">
+      <div class="table-header">
+        <h3>Ranking de Lojas da Regional</h3>
+        <span class="badge-count" id="badge-total-stores">0 Lojas Identificadas</span>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
             <tr>
-              <th class="py-2 px-2 text-center w-6">#</th>
-              <th class="py-2 px-3">Loja / Cidade</th>
-              <th class="py-2 px-3 text-right" id="th-prev">Anterior</th>
-              <th class="py-2 px-3 text-right" id="th-curr">Atual</th>
-              <th class="py-2 px-3 text-center w-36">Evolução / Barra</th>
-              <th class="py-2 px-2 text-center w-16">Variação</th>
+              <th class="col-rank">#</th>
+              <th class="col-store">Loja / Cidade</th>
+              <th class="col-num" id="th-prev">Anterior</th>
+              <th class="col-num" id="th-curr">Atual</th>
+              <th class="col-bar">Evolução / Barra</th>
+              <th class="col-var">Variação</th>
             </tr>
           </thead>
-          <tbody id="table-body" class="divide-y divide-slate-200 dark:divide-slate-800/60">
+          <tbody id="table-body">
             <tr>
-              <td colspan="6" class="py-6 text-center text-slate-400 dark:text-slate-500 text-xs">Aguardando envio do arquivo CSV...</td>
+              <td colspan="6">
+                <div class="empty-state">
+                  <span>📂</span>
+                  <p><strong>Nenhum arquivo CSV carregado</strong></p>
+                  <p style="font-size: 0.75rem; margin-top: 4px;">Clique no botão "Carregar CSV Local" no topo para visualizar a análise.</p>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
   </div>
 
   <script>
-    // ==========================================
-    // 1. TROCA DE TEMA (MODO CLARO / MODO ESCURO)
-    // ==========================================
-    const btnTheme = document.getElementById('btn-toggle-theme');
-    const themeIcon = document.getElementById('theme-icon');
-    const themeText = document.getElementById('theme-text');
+    // ==========================================================================
+    // 1. GERENCIADOR DE TEMA (CLARO / ESCURO)
+    // ==========================================================================
+    (function initTheme() {
+      const btnToggle = document.getElementById('btn-theme-toggle');
+      const themeIcon = document.getElementById('theme-icon');
+      const themeText = document.getElementById('theme-text');
+      const htmlEl = document.documentElement;
 
-    function applyTheme(isDark) {
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-        themeIcon.textContent = '☀️';
-        themeText.textContent = 'Modo Claro';
-      } else {
-        document.documentElement.classList.remove('dark');
-        themeIcon.textContent = '🌙';
-        themeText.textContent = 'Modo Escuro';
-      }
-    }
-
-    // Leitura inicial
-    let isDarkState = localStorage.getItem('movida_theme') !== 'light';
-    applyTheme(isDarkState);
-
-    btnTheme.onclick = function() {
-      isDarkState = !document.documentElement.classList.contains('dark');
-      localStorage.setItem('movida_theme', isDarkState ? 'dark' : 'light');
-      applyTheme(isDarkState);
-    };
-
-    // ==========================================
-    // 2. LEITURA E PROCESSAMENTO DE CSV (SEM DEPENDÊNCIAS EXTERNAS)
-    // ==========================================
-    document.getElementById('csv-file-input').onchange = function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      // Primeiro tenta ler em UTF-8. Se contiver caracteres truncados, relê em ISO-8859-1 (Windows Brasil)
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        let text = evt.target.result;
-        
-        // Se houver substituição ilícita por codificação (caracteres de substituição Unicode ), relê em ISO-8859-1
-        if (text.includes('')) {
-          const fallbackReader = new FileReader();
-          fallbackReader.onload = function(e2) {
-            parseAndRenderCSV(e2.target.result);
-          };
-          fallbackReader.readAsText(file, 'ISO-8859-1');
+      function applyTheme(isDark) {
+        if (isDark) {
+          htmlEl.classList.add('dark');
+          if (themeIcon) themeIcon.textContent = '☀️';
+          if (themeText) themeText.textContent = 'Modo Claro';
+          localStorage.setItem('movida_nps_theme', 'dark');
         } else {
-          parseAndRenderCSV(text);
+          htmlEl.classList.remove('dark');
+          if (themeIcon) themeIcon.textContent = '🌙';
+          if (themeText) themeText.textContent = 'Modo Escuro';
+          localStorage.setItem('movida_nps_theme', 'light');
         }
-      };
-      reader.readAsText(file, 'UTF-8');
-    };
+      }
 
-    function cleanNPS(val) {
-      if (val === undefined || val === null) return 0;
-      let cleaned = val.toString().replace('%', '').replace(',', '.').trim();
-      return parseFloat(cleaned) || 0;
+      // Recupera preferências do usuário
+      const savedTheme = localStorage.getItem('movida_nps_theme');
+      if (savedTheme) {
+        applyTheme(savedTheme === 'dark');
+      } else {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(prefersDark);
+      }
+
+      if (btnToggle) {
+        btnToggle.addEventListener('click', function () {
+          const isCurrentDark = htmlEl.classList.contains('dark');
+          applyTheme(!isCurrentDark);
+        });
+      }
+    })();
+
+    // ==========================================================================
+    // 2. PARSER DE CSV ULTRA-RESILIENTE
+    // ==========================================================================
+    const csvInput = document.getElementById('csv-file-input');
+
+    if (csvInput) {
+      csvInput.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function (evt) {
+          let content = evt.target.result;
+          
+          // Trata o caractere de substituição do Unicode (U+FFFD) caso haja incompatibilidade de UTF-8
+          if (content.includes('')) {
+            const readerIso = new FileReader();
+            readerIso.onload = function (isoEvt) {
+              processCSVContent(isoEvt.target.result);
+            };
+            readerIso.readAsText(file, 'ISO-8859-1');
+          } else {
+            processCSVContent(content);
+          }
+        };
+
+        reader.readAsText(file, 'UTF-8');
+      });
     }
 
-    function parseAndRenderCSV(rawText) {
-      // Separa linhas por quebra de linha universal
-      const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    // Auxiliar para converter números/porcentagens no formato BR para Number
+    function parseNPSValue(rawVal) {
+      if (rawVal === undefined || rawVal === null) return 0;
+      let clean = rawVal.toString().replace('%', '').replace(',', '.').trim();
+      let num = parseFloat(clean);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function processCSVContent(text) {
+      if (!text || !text.trim()) {
+        alert('O arquivo selecionado está vazio.');
+        return;
+      }
+
+      // Remove BOM (Byte Order Mark) caso presente
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
+
+      // Separa linhas considerando \r\n ou \n
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
       if (lines.length < 2) {
-        alert("O arquivo CSV precisa conter pelo menos o cabeçalho e 1 linha de dados.");
+        alert('O arquivo CSV deve possuir ao menos o cabeçalho e uma linha de dados.');
         return;
       }
 
-      // Descobre o delimitador (, ou ; ou Tab)
-      const headerLine = lines[0];
-      let sep = ',';
-      if (headerLine.includes(';')) sep = ';';
-      else if (headerLine.includes('\t')) sep = '\t';
+      // Detecta delimitador dinamicamente (, ou ; ou \t)
+      const firstLine = lines[0];
+      let delimiter = ',';
+      
+      const countSemicolon = (firstLine.match(/;/g) || []).length;
+      const countComma = (firstLine.match(/,/g) || []).length;
+      const countTab = (firstLine.match(/\t/g) || []).length;
 
-      // Parseia cabeçalho
-      const headers = headerLine.split(sep).map(h => h.replace(/^["']|["']$/g, '').trim());
+      if (countSemicolon >= countComma && countSemicolon >= countTab) {
+        delimiter = ';';
+      } else if (countTab > countComma && countTab > countSemicolon) {
+        delimiter = '\t';
+      }
 
+      // Separa campos mantendo aspas duplas caso existam
+      function parseCSVLine(line) {
+        const pattern = new RegExp(
+          '(\\' + delimiter + '|^)(?:"([^"]*)"|([^"\\' + delimiter + ']*))',
+          'gi'
+        );
+        const result = [];
+        let matches = null;
+        while ((matches = pattern.exec(line))) {
+          let matchedValue = matches[2] !== undefined ? matches[2] : matches[3];
+          result.push(matchedValue ? matchedValue.trim() : '');
+        }
+        return result;
+      }
+
+      const headers = parseCSVLine(lines[0]);
       if (headers.length < 3) {
-        alert("O CSV deve ter pelo menos 3 colunas (Loja, NPS Anterior, NPS Atual).");
+        alert('O arquivo deve possuir ao menos 3 colunas (ex: Loja, NPS Anterior, NPS Atual).');
         return;
       }
 
-      const prevKey = headers[headers.length - 2];
-      const currKey = headers[headers.length - 1];
+      const prevHeaderName = headers[headers.length - 2];
+      const currHeaderName = headers[headers.length - 1];
 
-      document.getElementById('subtitle-info').textContent = `Comparativo: ${prevKey} vs${currKey}`;
-      document.getElementById('th-prev').textContent = prevKey;
-      document.getElementById('th-curr').textContent = currKey;
+      // Atualiza textos do cabeçalho
+      document.getElementById('subtitle-info').textContent = `Comparativo: ${prevHeaderName} vs ${currHeaderName}`;
+      document.getElementById('hero-subtitle').textContent = `Comparações baseadas em: ${prevHeaderName} vs ${currHeaderName}`;
+      document.getElementById('th-prev').textContent = prevHeaderName;
+      document.getElementById('th-curr').textContent = currHeaderName;
 
-      let items = [];
-      let totalRow = null;
+      const items = [];
+      let totalRegionalRow = null;
 
-      let countUp = 0;
-      let countDown = 0;
-      let countEqual = 0;
+      let upCount = 0;
+      let downCount = 0;
+      let equalCount = 0;
 
-      // Parseia dados das lojas
+      // Processa cada linha de dados
       for (let i = 1; i < lines.length; i++) {
-        const rowCols = lines[i].split(sep).map(c => c.replace(/^["']|["']$/g, '').trim());
-        if (rowCols.length < 2) continue;
+        const cols = parseCSVLine(lines[i]);
+        if (cols.length < 2) continue;
 
-        const storeName = rowCols[0];
+        const storeName = cols[0];
         if (!storeName) continue;
 
-        const prevVal = cleanNPS(rowCols[rowCols.length - 2]);
-        const currVal = cleanNPS(rowCols[rowCols.length - 1]);
+        const prevVal = parseNPSValue(cols[cols.length - 2]);
+        const currVal = parseNPSValue(cols[cols.length - 1]);
         const diffVal = currVal - prevVal;
 
         const storeObj = { name: storeName, prev: prevVal, curr: currVal, diff: diffVal };
 
-        const lowerName = storeName.toLowerCase();
-        if (lowerName.includes('total') || lowerName.includes('rac sp') || lowerName.includes('regional')) {
-          totalRow = storeObj;
+        const lower = storeName.toLowerCase();
+        // Identifica se é uma linha consolidada de total regional
+        if (lower.includes('total') || lower.includes('regional') || lower.includes('rac sp')) {
+          totalRegionalRow = storeObj;
         } else {
           items.push(storeObj);
 
-          if (Math.abs(diffVal) < 0.001) countEqual++;
-          else if (diffVal > 0) countUp++;
-          else countDown++;
+          if (Math.abs(diffVal) < 0.001) {
+            equalCount++;
+          } else if (diffVal > 0) {
+            upCount++;
+          } else {
+            downCount++;
+          }
         }
       }
 
-      // Atualiza contadores
-      document.getElementById('count-up').textContent = countUp;
-      document.getElementById('count-equal').textContent = countEqual;
-      document.getElementById('count-down').textContent = countDown;
-      document.getElementById('total-regional-tag').textContent = `Total de Lojas: ${items.length}`;
+      // Atualiza contadores (corrigida a referência da variável downCount)
+      document.getElementById('count-up').textContent = upCount;
+      document.getElementById('count-equal').textContent = equalCount;
+      document.getElementById('count-down').textContent = downCount;
+      document.getElementById('badge-total-stores').textContent = `${items.length} Lojas Analisadas`;
 
-      // CÁLCULO DA MÉDIA REGIONAL
+      // CÁLCULO / DADOS DA MÉDIA REGIONAL
       let regPrev = 0;
       let regCurr = 0;
 
-      if (totalRow) {
-        regPrev = totalRow.prev;
-        regCurr = totalRow.curr;
+      if (totalRegionalRow) {
+        regPrev = totalRegionalRow.prev;
+        regCurr = totalRegionalRow.curr;
       } else if (items.length > 0) {
-        const sumP = items.reduce((a, b) => a + b.prev, 0);
-        const sumC = items.reduce((a, b) => a + b.curr, 0);
-        regPrev = sumP / items.length;
-        regCurr = sumC / items.length;
+        const sumPrev = items.reduce((acc, item) => acc + item.prev, 0);
+        const sumCurr = items.reduce((acc, item) => acc + item.curr, 0);
+        regPrev = sumPrev / items.length;
+        regCurr = sumCurr / items.length;
       }
 
       const regDiff = regCurr - regPrev;
-      const isRegPos = regDiff >= 0;
+      const isRegPositive = regDiff >= 0;
 
       document.getElementById('reg-prev').textContent = `${regPrev.toFixed(2)}%`;
       document.getElementById('reg-curr').textContent = `${regCurr.toFixed(2)}%`;
-      document.getElementById('reg-diff').textContent = `${isRegPos ? '+' : ''}${regDiff.toFixed(2)}%`;
-      document.getElementById('regional-card-subtitle').textContent = `Média ponderada entre ${prevKey} e${currKey}`;
+      const regBadge = document.getElementById('reg-diff');
+      regBadge.textContent = `${isRegPositive ? '+' : ''}${regDiff.toFixed(2)}%`;
+      regBadge.style.backgroundColor = isRegPositive ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)';
 
-      // Ordena ranking do maior NPS Atual para o menor
-      items.sort((a, b) => b.curr - a.curr);
-
-      // Maior Evolução e Maior Queda
+      // DESTAQUES: MAIOR EVOLUÇÃO E MAIOR QUEDA
       const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
       const topStore = sortedByDiff[0];
       const lowStore = sortedByDiff[sortedByDiff.length - 1];
@@ -391,40 +940,54 @@
       if (topStore) {
         document.getElementById('top-store-name').textContent = topStore.name;
         document.getElementById('top-store-var').textContent = `+${topStore.diff.toFixed(2)}%`;
-        document.getElementById('top-store-detail').textContent = `De ${topStore.prev.toFixed(2)}\% para${topStore.curr.toFixed(2)}%`;
+        document.getElementById('top-store-detail').textContent = `Evoluiu de ${topStore.prev.toFixed(2)}% para ${topStore.curr.toFixed(2)}%`;
       }
 
       if (lowStore) {
         document.getElementById('low-store-name').textContent = lowStore.name;
         document.getElementById('low-store-var').textContent = `${lowStore.diff.toFixed(2)}%`;
-        document.getElementById('low-store-detail').textContent = `De ${lowStore.prev.toFixed(2)}\% para${lowStore.curr.toFixed(2)}%`;
+        document.getElementById('low-store-detail').textContent = `Variou de ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
       }
+
+      // ORDENAÇÃO DO RANKING (Maior NPS Atual para o Menor)
+      items.sort((a, b) => b.curr - a.curr);
 
       const maxAbsDiff = Math.max(...items.map(i => Math.abs(i.diff)), 1);
 
-      // Preenche Tabela
+      // RENDERIZAÇÃO DA TABELA
       const tbody = document.getElementById('table-body');
       tbody.innerHTML = '';
 
       items.forEach((item, index) => {
-        const isPositive = item.diff > 0;
-        const isNeutral = Math.abs(item.diff) < 0.001;
-        
-        let diffColorClass = 'text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800';
-        let barBgClass = 'bg-slate-400 dark:bg-slate-500';
+        const isPos = item.diff > 0;
+        const isNeu = Math.abs(item.diff) < 0.001;
 
-        if (isPositive) {
-          diffColorClass = 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15';
-          barBgClass = 'bg-emerald-500';
-        } else if (!isNeutral) {
-          diffColorClass = 'text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15';
-          barBgClass = 'bg-rose-500';
-        }
+        let statusClass = 'neutral';
+        if (isPos) statusClass = 'up';
+        else if (!isNeu) statusClass = 'down';
 
-        const barWidthPercent = Math.min(Math.round((Math.abs(item.diff) / maxAbsDiff) * 100), 100);
+        const percentWidth = Math.min(Math.round((Math.abs(item.diff) / maxAbsDiff) * 100), 100);
 
-        const diffBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] ${diffColorClass} font-bold inline-block w-14 text-center">${isPositive ? '+' : ''}${item.diff.toFixed(2)}%</span>`;
-
-        const progressBarHtml = `
-          <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden flex items-center">
-            <div class="${barBg
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="col-rank">${index + 1}</td>
+          <td class="col-store">${item.name}</td>
+          <td class="col-num">${item.prev.toFixed(2)}%</td>
+          <td class="col-num col-curr">${item.curr.toFixed(2)}%</td>
+          <td class="col-bar">
+            <div class="bar-bg">
+              <div class="bar-fill ${statusClass}" style="width: ${percentWidth}%;"></div>
+            </div>
+          </td>
+          <td class="col-var">
+            <span class="badge-var ${statusClass}">
+              ${isPos ? '+' : ''}${item.diff.toFixed(2)}%
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
