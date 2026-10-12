@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -26,12 +27,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <style>
-    /* Estilos específicos para Impressão (A4 / PDF sem rolagem) */
+    /* Estilos específicos para Impressão e Exportação em PDF */
     @media print {
       body {
-        background-color: white !important;
-        color: black !important;
+        background-color: #ffffff !important;
+        color: #0f172a !important;
         padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
       .no-print {
         display: none !important;
@@ -41,45 +44,77 @@
         margin: 0 !important;
         padding: 0 !important;
       }
+      /* Header estilizado de impressão Movida */
+      .print-header {
+        background-color: #FF6600 !important;
+        color: #ffffff !important;
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px !important;
+      }
+      .print-header h1, .print-header p, .print-header div {
+        color: #ffffff !important;
+      }
       .card-box {
-        border: 1px solid #cbd5e1 !important;
-        background-color: #f8fafc !important;
+        border: 1px solid #fed7aa !important;
+        background-color: #fff7ed !important;
         box-shadow: none !important;
+      }
+      .card-box-dark {
+        border: 1px solid #e2e8f0 !important;
+        background-color: #f8fafc !important;
       }
       table {
         font-size: 9px !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
       }
-      th, td {
-        padding: 2px 4px !important;
+      th {
+        background-color: #fff7ed !important;
+        color: #c2410c !important;
+        border-bottom: 2px solid #ff6600 !important;
+        padding: 4px 6px !important;
+      }
+      td {
+        padding: 3px 6px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        color: #1e293b !important;
       }
       @page {
         size: A4 portrait;
-        margin: 6mm;
+        margin: 8mm;
       }
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6 font-sans">
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen p-3 md:p-6 font-sans transition-colors duration-200">
 
   <div class="max-w-5xl mx-auto space-y-3 print-container">
     
-    <!-- Cabeçalho -->
-    <header class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-3 gap-3">
+    <!-- Cabeçalho (com versão para tela e ajuste em impressão) -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-300 dark:border-slate-800 pb-3 gap-3 print-header">
       <div class="flex items-center gap-3">
-        <div class="bg-movida text-white font-black text-xl px-3 py-1 rounded-lg tracking-wider">
+        <div class="bg-movida text-white font-black text-xl px-3 py-1 rounded-lg tracking-wider shadow-sm">
           MOVIDA
         </div>
         <div>
-          <h1 class="text-xl font-bold text-white leading-tight">Painel Regional de NPS</h1>
-          <p class="text-slate-400 text-xs" id="subtitle-info">Carregue o arquivo CSV para atualizar os dados</p>
+          <h1 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">Painel Regional de NPS</h1>
+          <p class="text-slate-500 dark:text-slate-400 text-xs" id="subtitle-info">Carregue o arquivo CSV para atualizar os dados</p>
         </div>
       </div>
 
       <!-- Ações (Ocultas na Impressão) -->
       <div class="flex items-center gap-2 no-print">
-        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-700 flex items-center gap-1 font-semibold">
+        <!-- Alternador Dark / Light -->
+        <button id="theme-toggle" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1.5">
+          <span id="theme-toggle-icon">☀️</span>
+          <span id="theme-toggle-text">Modo Claro</span>
+        </button>
+
+        <button onclick="window.print()" class="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs px-3 py-2 rounded-lg transition border border-slate-300 dark:border-slate-700 flex items-center gap-1 font-semibold">
           🖨️ Imprimir / PDF
         </button>
+        
         <label class="bg-movida hover:bg-movida-hover text-white text-xs px-3 py-2 rounded-lg cursor-pointer transition font-bold shadow-md shadow-movida/20">
           📁 Carregar CSV Local
           <input type="file" id="csv-file-input" accept=".csv" class="hidden">
@@ -91,60 +126,60 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       
       <!-- Contador de Resumo da Regional -->
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md flex flex-col justify-between card-box">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-sm dark:shadow-md flex flex-col justify-between card-box-dark">
         <span class="text-[10px] font-bold uppercase tracking-wider text-movida block">📊 Balanço da Regional</span>
         <div class="grid grid-cols-3 gap-1 mt-2 text-center">
           <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-1">
-            <span class="text-xs font-bold text-emerald-400 block" id="count-up">0</span>
-            <span class="text-[9px] text-emerald-300 font-medium">Subiram 🚀</span>
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 block" id="count-up">0</span>
+            <span class="text-[9px] text-emerald-700 dark:text-emerald-300 font-medium">Subiram 🚀</span>
           </div>
-          <div class="bg-slate-800/80 border border-slate-700 rounded-lg p-1">
-            <span class="text-xs font-bold text-slate-300 block" id="count-equal">0</span>
-            <span class="text-[9px] text-slate-400 font-medium">Mantiveram ➖</span>
+          <div class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-300 block" id="count-equal">0</span>
+            <span class="text-[9px] text-slate-500 dark:text-slate-400 font-medium">Mantiveram ➖</span>
           </div>
           <div class="bg-rose-500/10 border border-rose-500/20 rounded-lg p-1">
-            <span class="text-xs font-bold text-rose-400 block" id="count-down">0</span>
-            <span class="text-[9px] text-rose-300 font-medium">Caíram 🔻</span>
+            <span class="text-xs font-bold text-rose-600 dark:text-rose-400 block" id="count-down">0</span>
+            <span class="text-[9px] text-rose-700 dark:text-rose-300 font-medium">Caíram 🔻</span>
           </div>
         </div>
       </div>
 
       <!-- Destaque Positivo -->
-      <div class="bg-slate-900 border border-emerald-500/40 rounded-xl p-3 shadow-md relative overflow-hidden card-box">
+      <div class="bg-white dark:bg-slate-900 border border-emerald-500/40 rounded-xl p-3 shadow-sm dark:shadow-md relative overflow-hidden card-box">
         <div class="absolute top-0 right-0 w-1.5 h-full bg-emerald-500"></div>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">🚀 Maior Evolução</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block">🚀 Maior Evolução</span>
         <div class="mt-1 flex justify-between items-baseline gap-2">
-          <h2 id="top-store-name" class="text-sm md:text-base font-bold text-white truncate">--</h2>
-          <span id="top-store-var" class="text-sm font-extrabold text-emerald-400 whitespace-nowrap">--</span>
+          <h2 id="top-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h2>
+          <span id="top-store-var" class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">--</span>
         </div>
-        <p id="top-store-detail" class="text-[11px] text-slate-400">--</p>
+        <p id="top-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400">--</p>
       </div>
 
       <!-- Destaque Negativo -->
-      <div class="bg-slate-900 border border-rose-500/40 rounded-xl p-3 shadow-md relative overflow-hidden card-box">
+      <div class="bg-white dark:bg-slate-900 border border-rose-500/40 rounded-xl p-3 shadow-sm dark:shadow-md relative overflow-hidden card-box">
         <div class="absolute top-0 right-0 w-1.5 h-full bg-rose-500"></div>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 block">🔻 Maior Queda</span>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 block">🔻 Maior Queda</span>
         <div class="mt-1 flex justify-between items-baseline gap-2">
-          <h2 id="low-store-name" class="text-sm md:text-base font-bold text-white truncate">--</h2>
-          <span id="low-store-var" class="text-sm font-extrabold text-rose-400 whitespace-nowrap">--</span>
+          <h2 id="low-store-name" class="text-sm md:text-base font-bold text-slate-900 dark:text-white truncate">--</h2>
+          <span id="low-store-var" class="text-sm font-extrabold text-rose-600 dark:text-rose-400 whitespace-nowrap">--</span>
         </div>
-        <p id="low-store-detail" class="text-[11px] text-slate-400">--</p>
+        <p id="low-store-detail" class="text-[11px] text-slate-500 dark:text-slate-400">--</p>
       </div>
 
     </div>
 
     <!-- Tabela de Ranking das Lojas -->
-    <div class="bg-slate-900 rounded-xl shadow-xl overflow-hidden border border-slate-800 card-box">
-      <div class="px-4 py-2 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
+    <div class="bg-white dark:bg-slate-900 rounded-xl shadow-md dark:shadow-xl overflow-hidden border border-slate-200 dark:border-slate-800 card-box-dark">
+      <div class="px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/80">
         <h3 class="text-xs font-bold uppercase tracking-wider text-movida">Ranking de Lojas</h3>
-        <span id="total-regional" class="text-xs font-bold px-2.5 py-0.5 bg-movida/20 border border-movida/30 rounded-full text-movida">
+        <span id="total-regional" class="text-xs font-bold px-2.5 py-0.5 bg-movida/15 dark:bg-movida/20 border border-movida/30 rounded-full text-movida">
           Média Regional: --
         </span>
       </div>
       
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
-          <thead class="bg-slate-950 text-slate-400 text-[10px] uppercase border-b border-slate-800">
+          <thead class="bg-slate-100 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-[10px] uppercase border-b border-slate-200 dark:border-slate-800">
             <tr>
               <th class="py-2 px-2 text-center w-6">#</th>
               <th class="py-2 px-3">Loja / Cidade</th>
@@ -154,9 +189,9 @@
               <th class="py-2 px-2 text-center w-16">Variação</th>
             </tr>
           </thead>
-          <tbody id="table-body" class="divide-y divide-slate-800/60">
+          <tbody id="table-body" class="divide-y divide-slate-200 dark:divide-slate-800/60">
             <tr>
-              <td colspan="6" class="py-6 text-center text-slate-500 text-xs">Aguardando envio do arquivo CSV...</td>
+              <td colspan="6" class="py-6 text-center text-slate-400 dark:text-slate-500 text-xs">Aguardando envio do arquivo CSV...</td>
             </tr>
           </tbody>
         </table>
@@ -166,12 +201,44 @@
   </div>
 
   <script>
+    // Gerenciador de Tema (Dark / Light)
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-toggle-icon');
+    const themeText = document.getElementById('theme-toggle-text');
+
+    function setTheme(isDark) {
+      if (isDark) {
+        htmlEl.classList.add('dark');
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Modo Claro';
+        localStorage.setItem('theme', 'dark');
+      } else {
+        htmlEl.classList.remove('dark');
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Modo Escuro';
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    // Inicialização do Tema
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+      setTheme(false);
+    } else {
+      setTheme(true); // Padrão Dark
+    }
+
+    themeBtn.addEventListener('click', () => {
+      setTheme(!htmlEl.classList.contains('dark'));
+    });
+
+    // Leitura e Processamento de CSV
     document.getElementById('csv-file-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
         Papa.parse(file, {
           header: true,
-          dynamicTyping: false,
           skipEmptyLines: true,
           encoding: "UTF-8",
           complete: (results) => {
@@ -278,14 +345,14 @@
         const isPositive = item.diff > 0;
         const isNeutral = Math.abs(item.diff) < 0.001;
         
-        let diffColorClass = 'text-slate-400 bg-slate-800';
-        let barBgClass = 'bg-slate-500';
+        let diffColorClass = 'text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800';
+        let barBgClass = 'bg-slate-400 dark:bg-slate-500';
 
         if (isPositive) {
-          diffColorClass = 'text-emerald-400 bg-emerald-500/15';
+          diffColorClass = 'text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15';
           barBgClass = 'bg-emerald-500';
         } else if (!isNeutral) {
-          diffColorClass = 'text-rose-400 bg-rose-500/15';
+          diffColorClass = 'text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-500/15';
           barBgClass = 'bg-rose-500';
         }
 
@@ -294,17 +361,17 @@
         const diffBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] ${diffColorClass} font-bold inline-block w-14 text-center">${isPositive ? '+' : ''}${item.diff.toFixed(2)}%</span>`;
 
         const progressBarHtml = `
-          <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden flex items-center">
+          <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden flex items-center">
             <div class="${barBgClass} h-full transition-all duration-300" style="width: ${barWidthPercent}%;"></div>
           </div>
         `;
 
         const row = document.createElement('tr');
-        row.className = "hover:bg-slate-800/40 transition";
+        row.className = "hover:bg-slate-100 dark:hover:bg-slate-800/40 transition";
         row.innerHTML = `
-          <td class="py-1.5 px-2 text-center font-bold text-slate-500">${index + 1}</td>
-          <td class="py-1.5 px-3 font-medium text-slate-100 truncate max-w-[200px]">${item.name}</td>
-          <td class="py-1.5 px-3 text-right text-slate-400">${item.prev.toFixed(2)}%</td>
+          <td class="py-1.5 px-2 text-center font-bold text-slate-400 dark:text-slate-500">${index + 1}</td>
+          <td class="py-1.5 px-3 font-medium text-slate-800 dark:text-slate-100 truncate max-w-[200px]">${item.name}</td>
+          <td class="py-1.5 px-3 text-right text-slate-500 dark:text-slate-400">${item.prev.toFixed(2)}%</td>
           <td class="py-1.5 px-3 text-right font-bold text-movida">${item.curr.toFixed(2)}%</td>
           <td class="py-1.5 px-3 text-center">${progressBarHtml}</td>
           <td class="py-1.5 px-2 text-center">${diffBadge}</td>
