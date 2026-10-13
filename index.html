@@ -441,6 +441,26 @@
       padding: 10px 12px;
       border-bottom: 1px solid var(--border-color);
       white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    th:hover {
+      background-color: var(--bg-hover);
+      color: var(--movida-orange);
+    }
+
+    th .sort-icon {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 0.65rem;
+      opacity: 0.6;
+    }
+
+    th.sorted .sort-icon {
+      opacity: 1;
+      color: var(--movida-orange);
     }
 
     td {
@@ -700,12 +720,12 @@
         <table>
           <thead>
             <tr>
-              <th class="col-rank">#</th>
-              <th class="col-store">Loja / Cidade</th>
-              <th class="col-num" id="th-prev">Anterior</th>
-              <th class="col-num" id="th-curr">Atual</th>
+              <th class="col-rank" onclick="handleSort('rank')"># <span class="sort-icon" id="sort-rank"></span></th>
+              <th class="col-store" onclick="handleSort('name')">Loja / Cidade <span class="sort-icon" id="sort-name"></span></th>
+              <th class="col-num" id="th-prev" onclick="handleSort('prev')">Anterior <span class="sort-icon" id="sort-prev"></span></th>
+              <th class="col-num sorted" id="th-curr" onclick="handleSort('curr')">Atual <span class="sort-icon" id="sort-curr">▼</span></th>
               <th class="col-bar">Evolução / Barra</th>
-              <th class="col-var">Variação</th>
+              <th class="col-var" onclick="handleSort('diff')">Variação <span class="sort-icon" id="sort-diff"></span></th>
             </tr>
           </thead>
           <tbody id="table-body">
@@ -726,6 +746,11 @@
   </div>
 
   <script>
+    // ESTADO GLOBAL DOS DADOS PARSADOS
+    let currentDataItems = [];
+    let currentSortCol = 'curr'; // Padrão: Ordena por NPS Atual
+    let currentSortDir = 'desc'; // Padrão: Do maior (melhor) para o menor
+
     // ==========================================================================
     // 1. GERENCIADOR DE TEMA (CLARO / ESCURO)
     // ==========================================================================
@@ -749,7 +774,6 @@
         }
       }
 
-      // Recupera preferências do usuário
       const savedTheme = localStorage.getItem('movida_nps_theme');
       if (savedTheme) {
         applyTheme(savedTheme === 'dark');
@@ -767,41 +791,25 @@
     })();
 
     // ==========================================================================
-    // 2. PARSER DE CSV ULTRA-RESILIENTE
+    // 2. PARSER E TRATAMENTO DE VALORES NUMÉRICOS
     // ==========================================================================
-    const csvInput = document.getElementById('csv-file-input');
-
-    if (csvInput) {
-      csvInput.addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-
-        reader.onload = function (evt) {
-          let content = evt.target.result;
-          
-          // Trata o caractere de substituição do Unicode (U+FFFD) caso haja incompatibilidade de UTF-8
-          if (content.includes('')) {
-            const readerIso = new FileReader();
-            readerIso.onload = function (isoEvt) {
-              processCSVContent(isoEvt.target.result);
-            };
-            readerIso.readAsText(file, 'ISO-8859-1');
-          } else {
-            processCSVContent(content);
-          }
-        };
-
-        reader.readAsText(file, 'UTF-8');
-      });
-    }
-
-    // Auxiliar para converter números/porcentagens no formato BR para Number
     function parseNPSValue(rawVal) {
       if (rawVal === undefined || rawVal === null) return 0;
-      let clean = rawVal.toString().replace('%', '').replace(',', '.').trim();
-      let num = parseFloat(clean);
+      let str = rawVal.toString().trim().replace(/%/g, '').replace(/\s+/g, '');
+      if (!str) return 0;
+
+      // Trata formatos com ponto e vírgula (ex: 1.234,56 ou 89,79)
+      if (str.includes('.') && str.includes(',')) {
+        if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
+          str = str.replace(/\./g, '').replace(',', '.');
+        } else {
+          str = str.replace(/,/g, '');
+        }
+      } else if (str.includes(',')) {
+        str = str.replace(',', '.');
+      }
+
+      let num = parseFloat(str);
       return isNaN(num) ? 0 : num;
     }
 
@@ -829,18 +837,46 @@
       return result;
     }
 
+    // ==========================================================================
+    // 3. CARREGAMENTO E PROCESSAMENTO DO ARQUIVO CSV
+    // ==========================================================================
+    const csvInput = document.getElementById('csv-file-input');
+
+    if (csvInput) {
+      csvInput.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function (evt) {
+          let content = evt.target.result;
+          
+          if (content.includes('')) {
+            const readerIso = new FileReader();
+            readerIso.onload = function (isoEvt) {
+              processCSVContent(isoEvt.target.result);
+            };
+            readerIso.readAsText(file, 'ISO-8859-1');
+          } else {
+            processCSVContent(content);
+          }
+        };
+
+        reader.readAsText(file, 'UTF-8');
+      });
+    }
+
     function processCSVContent(text) {
       if (!text || !text.trim()) {
         alert('O arquivo selecionado está vazio.');
         return;
       }
 
-      // Remove BOM (Byte Order Mark) caso presente
       if (text.charCodeAt(0) === 0xFEFF) {
         text = text.slice(1);
       }
 
-      // Separa linhas considerando \r\n ou \n
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
       if (lines.length < 2) {
@@ -848,7 +884,6 @@
         return;
       }
 
-      // Detecta delimitador dinamicamente (, ou ; ou \t)
       const firstLine = lines[0];
       let delimiter = ',';
       
@@ -862,10 +897,9 @@
         delimiter = '\t';
       }
 
-      // Converte todas as linhas em arrays de campos
       let allRows = lines.map(line => parseCSVLine(line, delimiter));
 
-      // Remove colunas vazias no final da tabela (causadas por ';' no final de cada linha)
+      // Remove colunas fantasmas no final (causadas por ; no fim das linhas)
       while (allRows.length > 0 && allRows[0].length > 1) {
         const lastIdx = allRows[0].length - 1;
         const isLastColEmptyAll = allRows.every(r => r.length <= lastIdx || !r[lastIdx] || r[lastIdx].trim() === '');
@@ -882,36 +916,54 @@
         return;
       }
 
-      // Mapeia os índices das colunas de dados
-      let prevColIdx = 1;
-      let currColIdx = headers.length - 1;
+      // IDENTIFICAÇÃO INTELIGENTE DE COLUNAS POR PALAVRAS-CHAVE
+      let prevColIdx = -1;
+      let currColIdx = -1;
 
-      if (headers.length >= 3) {
-        prevColIdx = headers.length - 2;
-        currColIdx = headers.length - 1;
-      } else {
-        prevColIdx = 1;
-        currColIdx = 1;
+      for (let c = 1; c < headers.length; c++) {
+        const hText = (headers[c] || '').toLowerCase().trim();
+        if (hText.includes('atual') || hText.includes('curr') || hText.includes('presente') || hText.includes('hoje')) {
+          currColIdx = c;
+        } else if (hText.includes('anter') || hText.includes('prev') || hText.includes('passad')) {
+          prevColIdx = c;
+        }
+      }
+
+      // Caso não tenha palavras-chave explícitas nos cabeçalhos:
+      if (currColIdx === -1 && prevColIdx === -1) {
+        if (headers.length >= 3) {
+          prevColIdx = 1;
+          currColIdx = 2;
+        } else {
+          prevColIdx = 1;
+          currColIdx = 1;
+        }
+      } else if (currColIdx === -1) {
+        currColIdx = (prevColIdx === 1 && headers.length >= 3) ? 2 : 1;
+      } else if (prevColIdx === -1) {
+        prevColIdx = (currColIdx === 1 && headers.length >= 3) ? 2 : 1;
       }
 
       let prevHeaderName = headers[prevColIdx] || 'Anterior';
       let currHeaderName = headers[currColIdx] || 'Atual';
 
-      // Se os nomes das colunas forem idênticos no CSV, ajusta a rotulagem para clareza
       if (prevColIdx !== currColIdx && prevHeaderName === currHeaderName) {
         prevHeaderName = `${headers[prevColIdx]} (1)`;
         currHeaderName = `${headers[currColIdx]} (2)`;
       }
 
-      // Atualiza os títulos no painel
       const subtitleText = (prevColIdx === currColIdx) 
         ? `Base de NPS: ${currHeaderName}`
         : `Comparativo: ${prevHeaderName} vs ${currHeaderName}`;
 
       document.getElementById('subtitle-info').textContent = subtitleText;
       document.getElementById('hero-subtitle').textContent = subtitleText;
-      document.getElementById('th-prev').textContent = prevHeaderName;
-      document.getElementById('th-curr').textContent = currHeaderName;
+      
+      const thPrev = document.getElementById('th-prev');
+      const thCurr = document.getElementById('th-curr');
+      
+      thPrev.childNodes[0].nodeValue = prevHeaderName + ' ';
+      thCurr.childNodes[0].nodeValue = currHeaderName + ' ';
 
       const items = [];
       let totalRegionalRow = null;
@@ -920,7 +972,6 @@
       let downCount = 0;
       let equalCount = 0;
 
-      // Processa cada linha de dados
       for (let i = 1; i < allRows.length; i++) {
         const cols = allRows[i];
         if (cols.length < 1) continue;
@@ -935,8 +986,7 @@
         const storeObj = { name: storeName, prev: prevVal, curr: currVal, diff: diffVal };
 
         const lower = storeName.toLowerCase();
-        // Identifica se é uma linha consolidada de total regional
-        if (lower.includes('total') || lower.includes('regional') || lower.includes('rac sp')) {
+        if (lower.includes('total') || lower.includes('regional') || lower.includes('rac sp') || lower.includes('média') || lower.includes('media')) {
           totalRegionalRow = storeObj;
         } else {
           items.push(storeObj);
@@ -951,13 +1001,12 @@
         }
       }
 
-      // Atualiza contadores
       document.getElementById('count-up').textContent = upCount;
       document.getElementById('count-equal').textContent = equalCount;
       document.getElementById('count-down').textContent = downCount;
       document.getElementById('badge-total-stores').textContent = `${items.length} Lojas Analisadas`;
 
-      // CÁLCULO / DADOS DA MÉDIA REGIONAL
+      // MÉDIA REGIONAL
       let regPrev = 0;
       let regCurr = 0;
 
@@ -980,7 +1029,7 @@
       regBadge.textContent = `${isRegPositive ? '+' : ''}${regDiff.toFixed(2)}%`;
       regBadge.style.backgroundColor = isRegPositive ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)';
 
-      // DESTAQUES: MAIOR EVOLUÇÃO E MAIOR QUEDA
+      // HIGHLIGHTS DE MAIOR EVOLUÇÃO E MAIOR QUEDA
       const sortedByDiff = [...items].sort((a, b) => b.diff - a.diff);
       const topStore = sortedByDiff[0];
       const lowStore = sortedByDiff[sortedByDiff.length - 1];
@@ -997,25 +1046,75 @@
         document.getElementById('low-store-detail').textContent = `Variou de ${lowStore.prev.toFixed(2)}% para ${lowStore.curr.toFixed(2)}%`;
       }
 
-      // ORDENAÇÃO DO RANKING (Do Maior NPS Atual para o Menor)
-      // Garante a ordenação do melhor para o pior NPS, independente da ordem alfabética do CSV de entrada
-      items.sort((a, b) => {
-        if (b.curr !== a.curr) {
-          return b.curr - a.curr; // Ordena por NPS Atual do maior (melhor) para o menor (pior)
-        }
-        if (b.diff !== a.diff) {
-          return b.diff - a.diff; // Em caso de empate no NPS, desempata pela maior evolução
-        }
-        return a.name.localeCompare(b.name, 'pt-BR'); // Desempate final em ordem alfabética
+      // ARMAZENA ITENS E RENDERIZA A TABELA COM ORDENAÇÃO PADRÃO (NPS ATUAL DECRESCENTE)
+      currentDataItems = items;
+      currentSortCol = 'curr';
+      currentSortDir = 'desc';
+
+      renderTable();
+    }
+
+    // ==========================================================================
+    // 4. ORDENAÇÃO INTERATIVA E RENDERIZAÇÃO DA TABELA
+    // ==========================================================================
+    function handleSort(colName) {
+      if (currentSortCol === colName) {
+        currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortCol = colName;
+        currentSortDir = (colName === 'name' || colName === 'rank') ? 'asc' : 'desc';
+      }
+      renderTable();
+    }
+
+    function renderTable() {
+      if (!currentDataItems || currentDataItems.length === 0) return;
+
+      // ATUALIZA ÍCONES DE ORDENAÇÃO NOS CABEÇALHOS
+      ['rank', 'name', 'prev', 'curr', 'diff'].forEach(col => {
+        const iconEl = document.getElementById(`sort-${col}`);
+        const thEl = iconEl ? iconEl.closest('th') : null;
+        if (iconEl) iconEl.textContent = '';
+        if (thEl) thEl.classList.remove('sorted');
       });
 
-      const maxAbsDiff = Math.max(...items.map(i => Math.abs(i.diff)), 1);
+      const activeIcon = document.getElementById(`sort-${currentSortCol}`);
+      if (activeIcon) {
+        activeIcon.textContent = currentSortDir === 'asc' ? '▲' : '▼';
+        activeIcon.closest('th').classList.add('sorted');
+      }
 
-      // RENDERIZAÇÃO DA TABELA
+      // LÓGICA DE ORDENAÇÃO RÍGIDA DOS DADOS
+      const sortedItems = [...currentDataItems].sort((a, b) => {
+        let valA = a[currentSortCol];
+        let valB = b[currentSortCol];
+
+        if (currentSortCol === 'name') {
+          return currentSortDir === 'asc' 
+            ? a.name.localeCompare(b.name, 'pt-BR')
+            : b.name.localeCompare(a.name, 'pt-BR');
+        }
+
+        if (currentSortCol === 'rank') {
+          return currentSortDir === 'asc' ? 0 : 0;
+        }
+
+        // Para métricas numéricas (curr, prev, diff):
+        if (valA !== valB) {
+          return currentSortDir === 'asc' ? valA - valB : valB - valA;
+        }
+
+        // Desempate padronizado: maior NPS Atual, depois maior variação
+        if (b.curr !== a.curr) return b.curr - a.curr;
+        return b.diff - a.diff;
+      });
+
+      const maxAbsDiff = Math.max(...sortedItems.map(i => Math.abs(i.diff)), 1);
+
       const tbody = document.getElementById('table-body');
       tbody.innerHTML = '';
 
-      items.forEach((item, index) => {
+      sortedItems.forEach((item, index) => {
         const isPos = item.diff > 0;
         const isNeu = Math.abs(item.diff) < 0.001;
 
